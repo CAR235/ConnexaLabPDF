@@ -99,20 +99,39 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
         break;
 
       case 'pdf-to-word':
-        // Create a simple DOCX with the PDF text content
+        // Create a Word document
         const docx = officegen('docx');
         
-        // Extract text from each page
-        const textContent = [];
+        // Extract text content from each page
         for (let i = 0; i < pages.length; i++) {
           const page = pages[i];
-          textContent.push(`Page ${i + 1}\n${page.getText()}`);
+          const { width, height } = page.getSize();
+          
+          // Create a paragraph for page header
+          const headerPara = docx.createP();
+          headerPara.addText(`Page ${i + 1}`, { bold: true, font_size: 14 });
+          
+          // Get page content
+          const operatorList = await page.getOperatorList();
+          const textItems = operatorList.fnArray
+            .map((fn, idx) => {
+              if (fn === 121) { // ShowText operator
+                return operatorList.argsArray[idx][0];
+              }
+              return '';
+            })
+            .filter(Boolean)
+            .join(' ');
+          
+          // Add content paragraph
+          const contentPara = docx.createP();
+          contentPara.addText(textItems || 'No text content found');
+          
+          // Add page break except for last page
+          if (i < pages.length - 1) {
+            docx.createP().addLineBreak();
+          }
         }
-        
-        // Create paragraphs in the Word document
-        const pdfText = textContent.join('\n\n');
-        const para = docx.createP();
-        para.addText(pdfText || 'No text content found');
         
         outputFileName = `${path.basename(file.originalFilename, '.pdf')}_${uuidv4()}.docx`;
         outputPath = path.join(process.cwd(), 'uploads', outputFileName);
