@@ -39,8 +39,8 @@ export default function Tool() {
         const filesData = JSON.parse(storedFiles);
         if (filesData.length > 0) {
           toast({
-            title: "Please re-upload your files",
-            description: "Files can't be stored between pages for security reasons."
+            title: "Ricarica i tuoi file",
+            description: "I file non possono essere conservati tra le pagine per motivi di sicurezza."
           });
         }
         // Clear the stored files since we've acknowledged them
@@ -62,8 +62,8 @@ export default function Tool() {
       
       if (invalidFiles.length > 0) {
         toast({
-          title: "Unsupported file format",
-          description: `This tool only accepts ${tool.acceptedFileTypes.join(', ')} files.`,
+          title: "Formato file non supportato",
+          description: `Questo strumento accetta solo file ${tool.acceptedFileTypes.join(', ')}.`,
           variant: "destructive",
         });
         return;
@@ -89,8 +89,8 @@ export default function Tool() {
     if (!tool) return;
     if (files.length === 0) {
       toast({
-        title: "No files selected",
-        description: "Please select at least one file to process.",
+        title: "Nessun file selezionato",
+        description: "Seleziona almeno un file da elaborare.",
         variant: "destructive",
       });
       return;
@@ -159,10 +159,10 @@ export default function Tool() {
             <h1 className="text-2xl font-bold text-neutral-400 mb-4">Tool not found</h1>
             <p className="text-neutral-300 mb-6">The requested tool does not exist.</p>
             <Link href="/">
-              <a className="inline-flex items-center text-secondary hover:underline">
+              <div className="inline-flex items-center text-secondary hover:underline cursor-pointer">
                 <ChevronLeft className="h-4 w-4 mr-1" />
-                Back to home
-              </a>
+                Torna alla home
+              </div>
             </Link>
           </div>
         </main>
@@ -186,10 +186,10 @@ export default function Tool() {
         <main className="flex-grow container mx-auto px-4 py-8">
           <div className="mb-4">
             <Link href="/">
-              <a className="inline-flex items-center text-secondary hover:underline">
+              <div className="inline-flex items-center text-[#dadb00] hover:underline cursor-pointer">
                 <ChevronLeft className="h-4 w-4 mr-1" />
                 Torna a tutti gli strumenti
-              </a>
+              </div>
             </Link>
           </div>
           
@@ -240,7 +240,7 @@ export default function Tool() {
                     <Button 
                       onClick={handleProcessFiles}
                       disabled={files.length === 0 || isUploading || isProcessing}
-                      className="w-full bg-primary hover:bg-red-600 text-white font-medium text-lg py-3"
+                      className="w-full bg-[#dadb00] hover:bg-[#c0c100] text-black font-medium text-lg py-3"
                     >
                       {isUploading || isProcessing ? (
                         <>
@@ -264,7 +264,7 @@ export default function Tool() {
                 
                 <Button 
                   onClick={handleDownload}
-                  className="bg-secondary hover:bg-blue-600 text-white font-medium text-lg py-3 px-6"
+                  className="bg-[#dadb00] hover:bg-[#c0c100] text-black font-medium text-lg py-3 px-6"
                 >
                   <Download className="mr-2 h-4 w-4" />
                   Scarica File
@@ -276,7 +276,7 @@ export default function Tool() {
                       setFiles([]);
                       setResult(null);
                     }}
-                    className="text-secondary hover:underline text-sm"
+                    className="text-[#dadb00] hover:underline text-sm"
                   >
                     Elabora un altro file
                   </button>
