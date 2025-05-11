@@ -16,28 +16,31 @@ export function Header() {
       <div className="container mx-auto px-4 py-4 flex flex-wrap items-center justify-between">
         <div className="flex items-center">
           <Link href="/">
-            <a className="text-primary font-bold text-3xl">PDF<span className="text-secondary">Tools</span></a>
+            <a className="flex items-center">
+              <span className="accent-gradient font-bold text-2xl md:text-3xl">Connexa</span>
+              <span className="font-light text-2xl md:text-3xl ml-1">Lab</span>
+            </a>
           </Link>
           <nav className="hidden md:flex ml-10 space-x-8">
             <Link href="/">
-              <a className="text-neutral-800 hover:text-primary px-2 py-2 text-base font-medium transition-colors">Tutti gli Strumenti</a>
+              <a className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium transition-colors">Tutti gli Strumenti</a>
             </Link>
             <Link href="/?category=convert-from-pdf">
-              <a className="text-neutral-800 hover:text-primary px-2 py-2 text-base font-medium transition-colors">Converti da PDF</a>
+              <a className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium transition-colors">Converti da PDF</a>
             </Link>
             <Link href="/?category=convert-to-pdf">
-              <a className="text-neutral-800 hover:text-primary px-2 py-2 text-base font-medium transition-colors">Converti in PDF</a>
+              <a className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium transition-colors">Converti in PDF</a>
             </Link>
             <Link href="/?category=edit-pdf">
-              <a className="text-neutral-800 hover:text-primary px-2 py-2 text-base font-medium transition-colors">Modifica PDF</a>
+              <a className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium transition-colors">Modifica PDF</a>
             </Link>
           </nav>
         </div>
         <div className="flex items-center space-x-4">
-          <button className="hidden md:inline-flex text-neutral-800 hover:text-primary text-base font-medium transition-colors">
+          <button className="hidden md:inline-flex text-neutral-800 hover:text-[#dadb00] text-base font-medium transition-colors">
             Accedi
           </button>
-          <Button className="bg-primary hover:bg-red-600 text-white px-6 py-2 text-base font-semibold shadow-md">
+          <Button className="bg-[#dadb00] hover:bg-[#c0c100] text-black px-6 py-2 text-base font-semibold shadow-md">
             Registrati
           </Button>
           
@@ -50,30 +53,34 @@ export function Header() {
             </SheetTrigger>
             <SheetContent side="right">
               <div className="flex flex-col space-y-4 mt-8">
+                <div className="mb-4">
+                  <span className="accent-gradient font-bold text-2xl">Connexa</span>
+                  <span className="font-light text-2xl ml-1">Lab</span>
+                </div>
                 <Link href="/">
-                  <a onClick={() => setIsOpen(false)} className="text-neutral-800 hover:text-primary px-2 py-2 text-base font-medium">
+                  <a onClick={() => setIsOpen(false)} className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium">
                     Tutti gli Strumenti
                   </a>
                 </Link>
                 <Link href="/?category=convert-from-pdf">
-                  <a onClick={() => setIsOpen(false)} className="text-neutral-800 hover:text-primary px-2 py-2 text-base font-medium">
+                  <a onClick={() => setIsOpen(false)} className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium">
                     Converti da PDF
                   </a>
                 </Link>
                 <Link href="/?category=convert-to-pdf">
-                  <a onClick={() => setIsOpen(false)} className="text-neutral-800 hover:text-primary px-2 py-2 text-base font-medium">
+                  <a onClick={() => setIsOpen(false)} className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium">
                     Converti in PDF
                   </a>
                 </Link>
                 <Link href="/?category=edit-pdf">
-                  <a onClick={() => setIsOpen(false)} className="text-neutral-800 hover:text-primary px-2 py-2 text-base font-medium">
+                  <a onClick={() => setIsOpen(false)} className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium">
                     Modifica PDF
                   </a>
                 </Link>
                 <div className="pt-4 border-t border-gray-200">
                   <Button className="w-full" variant="outline">Accedi</Button>
                 </div>
-                <Button className="w-full bg-primary hover:bg-red-600 text-white font-semibold">
+                <Button className="w-full bg-[#dadb00] hover:bg-[#c0c100] text-black font-semibold">
                   Registrati
                 </Button>
               </div>

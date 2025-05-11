@@ -15,12 +15,12 @@ export default function Home() {
   return (
     <>
       <Helmet>
-        <title>PDF Tools - All-in-one PDF solution</title>
-        <meta name="description" content="Free online PDF tools to merge, split, compress, convert, and edit PDF files. Easy to use and secure PDF manipulation tools." />
-        <meta property="og:title" content="PDF Tools - All-in-one PDF solution" />
-        <meta property="og:description" content="Free online PDF tools to merge, split, compress, convert, and edit PDF files. Easy to use and secure PDF manipulation tools." />
+        <title>Connexa Lab - Strumenti PDF professionali</title>
+        <meta name="description" content="Strumenti PDF online gratuiti per unire, dividere, comprimere, convertire e modificare file PDF. Strumenti di manipolazione PDF facili da usare e sicuri." />
+        <meta property="og:title" content="Connexa Lab - Strumenti PDF professionali" />
+        <meta property="og:description" content="Strumenti PDF online gratuiti per unire, dividere, comprimere, convertire e modificare file PDF. Strumenti di manipolazione PDF facili da usare e sicuri." />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://pdftools.example.com" />
+        <meta property="og:url" content="https://connexalab.com" />
       </Helmet>
       
       <div className="min-h-screen flex flex-col">
@@ -31,6 +31,7 @@ export default function Home() {
           <HowItWorks />
           <Features />
         </main>
+        <Footer />
       </div>
     </>
   );
