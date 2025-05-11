@@ -15,7 +15,7 @@ export function usePdfProcessing(): UsePdfProcessingReturn {
 
   const processPdf = async (toolId: string, fileIds: string[]): Promise<string> => {
     if (fileIds.length === 0) {
-      throw new Error('No files to process');
+      throw new Error('Nessun file da elaborare');
     }
 
     setIsProcessing(true);
@@ -38,7 +38,7 @@ export function usePdfProcessing(): UsePdfProcessingReturn {
       setProcessingProgress(100);
 
       if (!response.ok) {
-        throw new Error('PDF processing failed');
+        throw new Error('Elaborazione PDF fallita');
       }
 
       const result = await response.json();
