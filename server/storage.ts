@@ -4,8 +4,14 @@ import {
   type File, 
   type InsertFile,
   type Job,
-  type InsertJob
+  type InsertJob,
+  users,
+  files,
+  jobs
 } from "@shared/schema";
+
+import { db } from "./db";
+import { eq, and, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -26,114 +32,105 @@ export interface IStorage {
   getJobsByUserId(userId: number | null): Promise<Job[]>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private files: Map<number, File>;
-  private jobs: Map<number, Job>;
-  
-  private userId: number;
-  private fileId: number;
-  private jobId: number;
-  
-  constructor() {
-    this.users = new Map();
-    this.files = new Map();
-    this.jobs = new Map();
-    
-    this.userId = 1;
-    this.fileId = 1;
-    this.jobId = 1;
-  }
-  
+export class DatabaseStorage implements IStorage {
   // User methods
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
   
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
   
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
   
   // File methods
   async getFile(id: number): Promise<File | undefined> {
-    return this.files.get(id);
+    const [file] = await db.select().from(files).where(eq(files.id, id));
+    return file;
   }
   
   async createFile(insertFile: InsertFile): Promise<File> {
-    const id = this.fileId++;
-    const file: File = {
-      ...insertFile,
-      id,
-      createdAt: new Date()
-    };
-    this.files.set(id, file);
+    const [file] = await db.insert(files).values(insertFile).returning();
     return file;
   }
   
   async updateFile(id: number, updates: Partial<File>): Promise<File> {
-    const file = await this.getFile(id);
-    if (!file) {
+    const [updatedFile] = await db
+      .update(files)
+      .set(updates)
+      .where(eq(files.id, id))
+      .returning();
+    
+    if (!updatedFile) {
       throw new Error(`File with ID ${id} not found`);
     }
     
-    const updatedFile = { ...file, ...updates };
-    this.files.set(id, updatedFile);
     return updatedFile;
   }
   
   async deleteFile(id: number): Promise<boolean> {
-    return this.files.delete(id);
+    const result = await db
+      .delete(files)
+      .where(eq(files.id, id))
+      .returning({ id: files.id });
+    
+    return result.length > 0;
   }
   
   // Job methods
   async getJob(id: number): Promise<Job | undefined> {
-    return this.jobs.get(id);
+    const [job] = await db.select().from(jobs).where(eq(jobs.id, id));
+    return job;
   }
   
   async createJob(insertJob: InsertJob): Promise<Job> {
-    const id = this.jobId++;
-    const now = new Date();
-    const job: Job = {
-      ...insertJob,
-      id,
-      createdAt: now,
-      updatedAt: now,
-      outputFileId: null,
-      error: null
-    };
-    this.jobs.set(id, job);
+    const [job] = await db
+      .insert(jobs)
+      .values(insertJob)
+      .returning();
+    
     return job;
   }
   
   async updateJob(id: number, updates: Partial<Job>): Promise<Job> {
-    const job = await this.getJob(id);
-    if (!job) {
+    const now = new Date();
+    const updatesWithTimestamp = {
+      ...updates,
+      updatedAt: now
+    };
+    
+    const [updatedJob] = await db
+      .update(jobs)
+      .set(updatesWithTimestamp)
+      .where(eq(jobs.id, id))
+      .returning();
+    
+    if (!updatedJob) {
       throw new Error(`Job with ID ${id} not found`);
     }
     
-    const updatedJob = { 
-      ...job, 
-      ...updates,
-      updatedAt: new Date()
-    };
-    this.jobs.set(id, updatedJob);
     return updatedJob;
   }
   
   async getJobsByUserId(userId: number | null): Promise<Job[]> {
-    return Array.from(this.jobs.values()).filter(
-      (job) => job.userId === userId,
-    );
+    if (userId === null) {
+      return db
+        .select()
+        .from(jobs)
+        .where(isNull(jobs.userId));
+    } else {
+      return db
+        .select()
+        .from(jobs)
+        .where(eq(jobs.userId, userId));
+    }
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
