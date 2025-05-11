@@ -101,9 +101,12 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
       case 'pdf-to-word':
         // Create a simple DOCX with the PDF text content
         const docx = officegen('docx');
-        const extractedText = pages.map(page => page.getTextContent()).join('\n\n');
+        const pdfText = pages.map((page, i) => {
+          const { width, height } = page.getSize();
+          return `Page ${i + 1}\n${page.doc.getPageContent(page.ref)}`;
+        }).join('\n\n');
         
-        docx.createP().addText(extractedText);
+        docx.createP().addText(pdfText || 'No text content found');
         
         outputFileName = `${path.basename(file.originalFilename, '.pdf')}_${uuidv4()}.docx`;
         outputPath = path.join(process.cwd(), 'uploads', outputFileName);
