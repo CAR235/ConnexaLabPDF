@@ -139,15 +139,22 @@ export default function Tool() {
   const handleDownload = () => {
     if (!result) return;
     
-    // In a real app, this would trigger the actual download
+    // Create a temporary anchor element to trigger the download
+    const link = document.createElement('a');
+    link.href = `/api/download/${result}`; // Assuming result contains the file ID
+    link.download = 'processed-document.pdf';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
     toast({
-      title: "Download started",
-      description: "Your file will be downloaded shortly.",
+      title: "Download avviato",
+      description: "Il tuo file verrà scaricato a breve.",
     });
     
-    // Reset for a new operation
-    setResult(null);
-    setFiles([]);
+    // Don't reset the UI state after download
+    // setResult(null);
+    // setFiles([]);
   };
 
   if (!tool) {
