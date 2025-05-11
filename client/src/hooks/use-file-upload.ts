@@ -23,8 +23,8 @@ export function useFileUpload(): UseFileUploadReturn {
 
     try {
       const formData = new FormData();
-      files.forEach((file, index) => {
-        formData.append(`file${index}`, file);
+      files.forEach((file) => {
+        formData.append('files', file);
       });
 
       // In a real app, we would track upload progress with XMLHttpRequest
@@ -44,15 +44,15 @@ export function useFileUpload(): UseFileUploadReturn {
       setUploadProgress(100);
 
       if (!response.ok) {
-        throw new Error('File upload failed');
+        throw new Error('Caricamento file fallito');
       }
 
       const result = await response.json();
       return result.fileIds;
     } catch (error) {
       toast({
-        title: 'Upload Error',
-        description: error instanceof Error ? error.message : 'Failed to upload files',
+        title: 'Errore di caricamento',
+        description: error instanceof Error ? error.message : 'Impossibile caricare i file',
         variant: 'destructive',
       });
       throw error;

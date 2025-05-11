@@ -37,9 +37,9 @@ function ToolCard({ tool }: ToolCardProps) {
         </div>
         <p className="text-base text-neutral-600 mb-5">{tool.description}</p>
         <Link href={tool.route}>
-          <a className="w-full inline-block text-center bg-white hover:bg-[#dadb00] text-neutral-800 font-medium py-3 rounded-lg transition-colors border-2 border-[#dadb00] bg-opacity-10 hover:text-black">
+          <div className="w-full inline-block text-center bg-white hover:bg-[#dadb00] text-neutral-800 font-medium py-3 rounded-lg transition-colors border-2 border-[#dadb00] bg-opacity-10 hover:text-black cursor-pointer">
             Usa {tool.name}
-          </a>
+          </div>
         </Link>
       </div>
     </div>

@@ -63,7 +63,7 @@ export function FileDropzone({
       {...getRootProps()}
       className={cn(
         'drop-area p-8 rounded-xl text-center cursor-pointer transition-all duration-300',
-        isDragActive && 'active bg-blue-50 border-blue-300',
+        isDragActive && 'active bg-[#dadb00] bg-opacity-10 border-[#dadb00]',
         isDragReject && 'border-red-500 bg-red-50',
         className
       )}
@@ -72,12 +72,12 @@ export function FileDropzone({
       
       {children || (
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-secondary bg-opacity-10 rounded-full mb-6">
-            <Upload className="h-10 w-10 text-secondary" />
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-[#dadb00] bg-opacity-10 rounded-full mb-6">
+            <Upload className="h-10 w-10 text-black" />
           </div>
           <h3 className="text-2xl font-bold text-neutral-800 mb-3">Trascina qui i tuoi file</h3>
           <p className="text-neutral-600 mb-5 text-lg">oppure</p>
-          <Button className="bg-secondary hover:bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold text-lg shadow-md">
+          <Button className="bg-[#dadb00] hover:bg-[#c0c100] text-black px-8 py-3 rounded-lg font-semibold text-lg shadow-md">
             Seleziona File
           </Button>
           <p className="mt-6 text-sm text-neutral-500">

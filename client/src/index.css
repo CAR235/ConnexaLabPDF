@@ -75,7 +75,7 @@
 }
 
 .drop-area:hover, .drop-area.active {
-  @apply border-[hsl(var(--secondary))] bg-[hsl(var(--secondary))] bg-opacity-5;
+  @apply border-[#dadb00] bg-[#dadb00] bg-opacity-10;
 }
 
 .tool-card {
