@@ -105,31 +105,30 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
         // Extract text content from each page
         for (let i = 0; i < pages.length; i++) {
           const page = pages[i];
-          const { width, height } = page.getSize();
           
           // Create a paragraph for page header
           const headerPara = docx.createP();
           headerPara.addText(`Page ${i + 1}`, { bold: true, font_size: 14 });
           
-          // Get page content
-          const operatorList = await page.getOperatorList();
-          const textItems = operatorList.fnArray
-            .map((fn, idx) => {
-              if (fn === 121) { // ShowText operator
-                return operatorList.argsArray[idx][0];
-              }
-              return '';
-            })
-            .filter(Boolean)
-            .join(' ');
-          
-          // Add content paragraph
-          const contentPara = docx.createP();
-          contentPara.addText(textItems || 'No text content found');
-          
-          // Add page break except for last page
-          if (i < pages.length - 1) {
-            docx.createP().addLineBreak();
+          // Get text content using getTextContent()
+          try {
+            const textContent = await page.getTextContent();
+            const textItems = textContent.items
+              .map(item => item.str)
+              .join(' ');
+            
+            // Add content paragraph
+            const contentPara = docx.createP();
+            contentPara.addText(textItems || 'No text content found');
+            
+            // Add page break except for last page
+            if (i < pages.length - 1) {
+              docx.createP().addLineBreak();
+            }
+          } catch (error) {
+            console.error(`Error extracting text from page ${i + 1}:`, error);
+            const contentPara = docx.createP();
+            contentPara.addText(`Failed to extract text from page ${i + 1}`);
           }
         }
         
