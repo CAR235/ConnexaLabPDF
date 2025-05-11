@@ -8,10 +8,10 @@ interface ToolCardProps {
 
 function ToolCard({ tool }: ToolCardProps) {
   const colorClasses = {
-    primary: 'bg-primary text-primary',
-    secondary: 'bg-secondary text-secondary',
-    success: 'bg-success text-success',
-    warning: 'bg-warning text-warning',
+    primary: 'bg-[#dadb00] bg-opacity-10 text-black',
+    secondary: 'bg-[#dadb00] bg-opacity-10 text-black',
+    success: 'bg-[#dadb00] bg-opacity-10 text-black',
+    warning: 'bg-[#dadb00] bg-opacity-10 text-black',
   };
 
   const IconComponent = tool.icon;
@@ -37,7 +37,7 @@ function ToolCard({ tool }: ToolCardProps) {
         </div>
         <p className="text-base text-neutral-600 mb-5">{tool.description}</p>
         <Link href={tool.route}>
-          <a className="w-full inline-block text-center bg-gray-50 hover:bg-gray-100 text-neutral-800 font-medium py-3 rounded-lg transition-colors border border-gray-200 hover:border-gray-300">
+          <a className="w-full inline-block text-center bg-white hover:bg-[#dadb00] text-neutral-800 font-medium py-3 rounded-lg transition-colors border-2 border-[#dadb00] bg-opacity-10 hover:text-black">
             Usa {tool.name}
           </a>
         </Link>
@@ -65,9 +65,11 @@ export function ToolsGrid({ category }: ToolsGridProps) {
   const title = category ? categoryTitles[category] : 'Tutti gli Strumenti PDF';
 
   return (
-    <section className="py-16 bg-gray-50">
+    <section className="py-16 bg-white">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold text-neutral-800 mb-3 text-center">{title}</h2>
+        <h2 className="text-3xl font-bold text-neutral-800 mb-3 text-center">
+          <span className="accent-gradient">{title}</span>
+        </h2>
         <p className="text-neutral-600 mb-12 text-center max-w-3xl mx-auto text-lg">
           Converti, comprimi, unisci, dividi, ruota e sblocca PDF con i nostri strumenti online gratuiti.
         </p>
