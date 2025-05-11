@@ -1,3 +1,4 @@
+
 import { PDFDocument } from 'pdf-lib';
 import fs from 'fs/promises';
 import path from 'path';
@@ -5,39 +6,33 @@ import { v4 as uuidv4 } from 'uuid';
 import { type File } from '@shared/schema';
 import { storage } from '../storage';
 
-// Convert various formats to PDF
 export async function convertToPdf(files: File[], toolId: string): Promise<File> {
   try {
-    // In a production environment, this would use specialized libraries for each format
-    // For this implementation, we'll create a simple PDF
+    const pdfDoc = await PDFDocument.create();
+    
+    for (const file of files) {
+      // Read the file content
+      const fileContent = await fs.readFile(file.path);
+      
+      // Here we'd use specific conversion logic based on file type
+      // For now, we create a page with some text
+      const page = pdfDoc.addPage([612, 792]);
+      page.drawText(`Content from ${file.originalFilename}`, {
+        x: 50,
+        y: 700,
+        size: 20,
+      });
+    }
     
     const outputFileName = `converted_${uuidv4()}.pdf`;
     const outputPath = path.join(process.cwd(), 'uploads', outputFileName);
     
-    // Create a new PDF document
-    const pdfDoc = await PDFDocument.create();
-    
-    // Add a blank page
-    pdfDoc.addPage([612, 792]); // US Letter size
-    
-    // In a real implementation, this would process the input files based on their format
-    // and create appropriate PDF content
-    
-    // Save the PDF
     const pdfBytes = await pdfDoc.save();
     await fs.writeFile(outputPath, pdfBytes);
     
-    // Determine original filename based on input format
-    let originalFilename = 'converted.pdf';
-    if (files.length > 0) {
-      const baseFileName = path.basename(files[0].originalFilename, path.extname(files[0].originalFilename));
-      originalFilename = `${baseFileName}.pdf`;
-    }
-    
-    // Create a file entry
     const outputFile = await storage.createFile({
       filename: outputFileName,
-      originalFilename: originalFilename,
+      originalFilename: `converted_${path.basename(files[0].originalFilename)}`,
       path: outputPath,
       size: pdfBytes.length,
       mimeType: 'application/pdf',
@@ -55,14 +50,24 @@ export async function convertToPdf(files: File[], toolId: string): Promise<File>
   }
 }
 
-// Convert PDF to various formats
 export async function convertFromPdf(file: File, toolId: string): Promise<File> {
   try {
-    if (!file.mimeType.includes('pdf')) {
-      throw new Error(`File ${file.originalFilename} is not a PDF`);
+    const fileBuffer = await fs.readFile(file.path);
+    const pdfDoc = await PDFDocument.load(fileBuffer);
+    
+    // Extract text and create appropriate output based on format
+    const pages = pdfDoc.getPages();
+    let outputContent = '';
+    
+    for (const page of pages) {
+      // In a real implementation, we'd extract text properly
+      // For now, we'll create a simple text representation
+      outputContent += `Page ${pages.indexOf(page) + 1}\n`;
+      outputContent += `Width: ${page.getWidth()}, Height: ${page.getHeight()}\n`;
+      outputContent += '---\n';
     }
     
-    // Determine output format based on toolId
+    const baseFileName = path.basename(file.originalFilename, '.pdf');
     let outputFormat: string;
     let outputMimeType: string;
     
@@ -87,18 +92,11 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
         throw new Error(`Unsupported conversion format: ${toolId}`);
     }
     
-    // In a production environment, this would use specialized libraries for each format
-    // For this implementation, we'll just create an empty file with the right extension
-    
-    const baseFileName = path.basename(file.originalFilename, '.pdf');
     const outputFileName = `${baseFileName}_${uuidv4()}.${outputFormat}`;
     const outputPath = path.join(process.cwd(), 'uploads', outputFileName);
     
-    // For demonstration purposes, write a minimal file
-    // In a real implementation, this would convert the PDF content to the target format
-    await fs.writeFile(outputPath, 'Placeholder content for converted file');
+    await fs.writeFile(outputPath, outputContent);
     
-    // Create a file entry
     const stats = await fs.stat(outputPath);
     const outputFile = await storage.createFile({
       filename: outputFileName,
@@ -109,7 +107,8 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
       userId: file.userId,
       metadata: {
         sourceFile: file.id,
-        conversionType: toolId
+        conversionType: toolId,
+        pageCount: pages.length
       }
     });
     
