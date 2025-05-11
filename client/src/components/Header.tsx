@@ -16,23 +16,23 @@ export function Header() {
       <div className="container mx-auto px-4 py-4 flex flex-wrap items-center justify-between">
         <div className="flex items-center">
           <Link href="/">
-            <a className="flex items-center">
+            <div className="flex items-center cursor-pointer">
               <span className="accent-gradient font-bold text-2xl md:text-3xl">Connexa</span>
               <span className="font-light text-2xl md:text-3xl ml-1">Lab</span>
-            </a>
+            </div>
           </Link>
           <nav className="hidden md:flex ml-10 space-x-8">
             <Link href="/">
-              <a className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium transition-colors">Tutti gli Strumenti</a>
+              <div className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium transition-colors cursor-pointer">Tutti gli Strumenti</div>
             </Link>
             <Link href="/?category=convert-from-pdf">
-              <a className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium transition-colors">Converti da PDF</a>
+              <div className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium transition-colors cursor-pointer">Converti da PDF</div>
             </Link>
             <Link href="/?category=convert-to-pdf">
-              <a className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium transition-colors">Converti in PDF</a>
+              <div className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium transition-colors cursor-pointer">Converti in PDF</div>
             </Link>
             <Link href="/?category=edit-pdf">
-              <a className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium transition-colors">Modifica PDF</a>
+              <div className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium transition-colors cursor-pointer">Modifica PDF</div>
             </Link>
           </nav>
         </div>
@@ -58,24 +58,24 @@ export function Header() {
                   <span className="font-light text-2xl ml-1">Lab</span>
                 </div>
                 <Link href="/">
-                  <a onClick={() => setIsOpen(false)} className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium">
+                  <div onClick={() => setIsOpen(false)} className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium cursor-pointer">
                     Tutti gli Strumenti
-                  </a>
+                  </div>
                 </Link>
                 <Link href="/?category=convert-from-pdf">
-                  <a onClick={() => setIsOpen(false)} className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium">
+                  <div onClick={() => setIsOpen(false)} className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium cursor-pointer">
                     Converti da PDF
-                  </a>
+                  </div>
                 </Link>
                 <Link href="/?category=convert-to-pdf">
-                  <a onClick={() => setIsOpen(false)} className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium">
+                  <div onClick={() => setIsOpen(false)} className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium cursor-pointer">
                     Converti in PDF
-                  </a>
+                  </div>
                 </Link>
                 <Link href="/?category=edit-pdf">
-                  <a onClick={() => setIsOpen(false)} className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium">
+                  <div onClick={() => setIsOpen(false)} className="text-neutral-800 hover:text-[#dadb00] px-2 py-2 text-base font-medium cursor-pointer">
                     Modifica PDF
-                  </a>
+                  </div>
                 </Link>
                 <div className="pt-4 border-t border-gray-200">
                   <Button className="w-full" variant="outline">Accedi</Button>

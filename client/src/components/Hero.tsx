@@ -76,7 +76,7 @@ export function Hero() {
               multiple={true}
               acceptedFileTypes={['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.jpg', '.jpeg', '.png']}
               maxFileSize={100 * 1024 * 1024} // 100MB
-              className="bg-gray-50 border-2 border-dashed border-gray-300 hover:border-[#dadb00] transition-colors"
+              className="bg-gray-50 border-2 border-dashed border-[#dadb00] transition-colors"
             />
           </div>
         </div>
