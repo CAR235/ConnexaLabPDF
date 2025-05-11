@@ -15,8 +15,8 @@ export const pdfTools: Tool[] = [
   // Convert from PDF
   {
     id: 'pdf-to-word',
-    name: 'PDF to Word',
-    description: 'Convert PDFs to editable Word documents.',
+    name: 'PDF a Word',
+    description: 'Converti PDF in documenti Word modificabili.',
     icon: FileText,
     category: 'convert-from-pdf',
     color: 'primary',
@@ -25,8 +25,8 @@ export const pdfTools: Tool[] = [
   },
   {
     id: 'pdf-to-excel',
-    name: 'PDF to Excel',
-    description: 'Extract PDF tables to Excel spreadsheets.',
+    name: 'PDF a Excel',
+    description: 'Estrai tabelle PDF in fogli di calcolo Excel.',
     icon: FileSpreadsheet,
     category: 'convert-from-pdf',
     color: 'primary',
@@ -35,8 +35,8 @@ export const pdfTools: Tool[] = [
   },
   {
     id: 'pdf-to-powerpoint',
-    name: 'PDF to PowerPoint',
-    description: 'Turn PDFs into editable presentations.',
+    name: 'PDF a PowerPoint',
+    description: 'Trasforma PDF in presentazioni modificabili.',
     icon: FileType,
     category: 'convert-from-pdf',
     color: 'primary',
@@ -45,8 +45,8 @@ export const pdfTools: Tool[] = [
   },
   {
     id: 'pdf-to-jpg',
-    name: 'PDF to JPG',
-    description: 'Convert each PDF page to a JPG image.',
+    name: 'PDF a JPG',
+    description: 'Converti ogni pagina PDF in un\'immagine JPG.',
     icon: FileImage,
     category: 'convert-from-pdf',
     color: 'primary',
@@ -57,8 +57,8 @@ export const pdfTools: Tool[] = [
   // Convert to PDF
   {
     id: 'word-to-pdf',
-    name: 'Word to PDF',
-    description: 'Convert Word documents to PDF format.',
+    name: 'Word a PDF',
+    description: 'Converti documenti Word in formato PDF.',
     icon: FileEdit,
     category: 'convert-to-pdf',
     color: 'secondary',
@@ -67,8 +67,8 @@ export const pdfTools: Tool[] = [
   },
   {
     id: 'excel-to-pdf',
-    name: 'Excel to PDF',
-    description: 'Convert Excel spreadsheets to PDF format.',
+    name: 'Excel a PDF',
+    description: 'Converti fogli di calcolo Excel in formato PDF.',
     icon: FileEdit,
     category: 'convert-to-pdf',
     color: 'secondary',
@@ -77,8 +77,8 @@ export const pdfTools: Tool[] = [
   },
   {
     id: 'powerpoint-to-pdf',
-    name: 'PowerPoint to PDF',
-    description: 'Convert PowerPoint presentations to PDF.',
+    name: 'PowerPoint a PDF',
+    description: 'Converti presentazioni PowerPoint in PDF.',
     icon: FileEdit,
     category: 'convert-to-pdf',
     color: 'secondary',
@@ -87,8 +87,8 @@ export const pdfTools: Tool[] = [
   },
   {
     id: 'jpg-to-pdf',
-    name: 'JPG to PDF',
-    description: 'Convert JPG images to PDF format.',
+    name: 'JPG a PDF',
+    description: 'Converti immagini JPG in formato PDF.',
     icon: FileEdit,
     category: 'convert-to-pdf',
     color: 'secondary',
@@ -97,8 +97,8 @@ export const pdfTools: Tool[] = [
   },
   {
     id: 'html-to-pdf',
-    name: 'HTML to PDF',
-    description: 'Convert web pages to PDF documents.',
+    name: 'HTML a PDF',
+    description: 'Converti pagine web in documenti PDF.',
     icon: FileEdit,
     category: 'convert-to-pdf',
     color: 'secondary',
@@ -109,8 +109,8 @@ export const pdfTools: Tool[] = [
   // Edit PDF
   {
     id: 'merge-pdf',
-    name: 'Merge PDF',
-    description: 'Combine multiple PDFs into one document.',
+    name: 'Unisci PDF',
+    description: 'Combina più PDF in un unico documento.',
     icon: FileEdit,
     category: 'edit-pdf',
     color: 'success',
@@ -119,8 +119,8 @@ export const pdfTools: Tool[] = [
   },
   {
     id: 'split-pdf',
-    name: 'Split PDF',
-    description: 'Divide PDF into separate files.',
+    name: 'Dividi PDF',
+    description: 'Dividi un PDF in file separati.',
     icon: FileEdit,
     category: 'edit-pdf',
     color: 'success',
@@ -129,8 +129,8 @@ export const pdfTools: Tool[] = [
   },
   {
     id: 'remove-pages',
-    name: 'Remove Pages',
-    description: 'Delete specific pages from PDF.',
+    name: 'Rimuovi Pagine',
+    description: 'Elimina pagine specifiche dal PDF.',
     icon: FileEdit,
     category: 'edit-pdf',
     color: 'success',
@@ -139,8 +139,8 @@ export const pdfTools: Tool[] = [
   },
   {
     id: 'extract-pages',
-    name: 'Extract Pages',
-    description: 'Save selected pages as a new PDF.',
+    name: 'Estrai Pagine',
+    description: 'Salva pagine selezionate come nuovo PDF.',
     icon: FileEdit,
     category: 'edit-pdf',
     color: 'success',
@@ -149,8 +149,8 @@ export const pdfTools: Tool[] = [
   },
   {
     id: 'rotate-pdf',
-    name: 'Rotate PDF',
-    description: 'Rotate PDF pages to correct orientation.',
+    name: 'Ruota PDF',
+    description: 'Ruota le pagine PDF per correggere l\'orientamento.',
     icon: FileEdit,
     category: 'edit-pdf',
     color: 'success',
@@ -159,8 +159,8 @@ export const pdfTools: Tool[] = [
   },
   {
     id: 'compress-pdf',
-    name: 'Compress PDF',
-    description: 'Reduce PDF file size while maintaining quality.',
+    name: 'Comprimi PDF',
+    description: 'Riduci la dimensione del file PDF mantenendo la qualità.',
     icon: FileEdit,
     category: 'edit-pdf',
     color: 'success',
@@ -169,8 +169,8 @@ export const pdfTools: Tool[] = [
   },
   {
     id: 'add-page-numbers',
-    name: 'Add Page Numbers',
-    description: 'Insert customizable page numbering to PDF.',
+    name: 'Numera Pagine',
+    description: 'Inserisci numerazione personalizzabile nel PDF.',
     icon: FileEdit,
     category: 'edit-pdf',
     color: 'success',
@@ -179,8 +179,8 @@ export const pdfTools: Tool[] = [
   },
   {
     id: 'repair-pdf',
-    name: 'Repair PDF',
-    description: 'Fix corrupted PDF files.',
+    name: 'Ripara PDF',
+    description: 'Ripara file PDF danneggiati.',
     icon: FileEdit,
     category: 'edit-pdf',
     color: 'success',
@@ -191,8 +191,8 @@ export const pdfTools: Tool[] = [
   // Security
   {
     id: 'protect-pdf',
-    name: 'Protect PDF',
-    description: 'Add password security to your PDF.',
+    name: 'Proteggi PDF',
+    description: 'Aggiungi protezione con password al tuo PDF.',
     icon: File,
     category: 'security',
     color: 'warning',
@@ -201,8 +201,8 @@ export const pdfTools: Tool[] = [
   },
   {
     id: 'unlock-pdf',
-    name: 'Unlock PDF',
-    description: 'Remove password protection from PDF.',
+    name: 'Sblocca PDF',
+    description: 'Rimuovi la protezione con password dal PDF.',
     icon: File,
     category: 'security',
     color: 'warning',
@@ -211,8 +211,8 @@ export const pdfTools: Tool[] = [
   },
   {
     id: 'add-watermark',
-    name: 'Add Watermark',
-    description: 'Apply text or image watermarks to PDF.',
+    name: 'Aggiungi Filigrana',
+    description: 'Applica filigrane di testo o immagini al PDF.',
     icon: File,
     category: 'security',
     color: 'warning',
@@ -221,8 +221,8 @@ export const pdfTools: Tool[] = [
   },
   {
     id: 'sign-pdf',
-    name: 'Sign PDF',
-    description: 'Add digital signatures to PDF documents.',
+    name: 'Firma PDF',
+    description: 'Aggiungi firme digitali ai documenti PDF.',
     icon: File,
     category: 'security',
     color: 'warning',

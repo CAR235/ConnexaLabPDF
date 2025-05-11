@@ -31,7 +31,6 @@ export default function Home() {
           <HowItWorks />
           <Features />
         </main>
-        <Footer />
       </div>
     </>
   );

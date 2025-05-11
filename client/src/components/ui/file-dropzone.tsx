@@ -62,8 +62,8 @@ export function FileDropzone({
     <div
       {...getRootProps()}
       className={cn(
-        'drop-area p-8 rounded-xl text-center cursor-pointer',
-        isDragActive && 'active',
+        'drop-area p-8 rounded-xl text-center cursor-pointer transition-all duration-300',
+        isDragActive && 'active bg-blue-50 border-blue-300',
         isDragReject && 'border-red-500 bg-red-50',
         className
       )}
@@ -72,16 +72,19 @@ export function FileDropzone({
       
       {children || (
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-secondary bg-opacity-10 rounded-full mb-4">
-            <Upload className="h-8 w-8 text-secondary" />
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-secondary bg-opacity-10 rounded-full mb-6">
+            <Upload className="h-10 w-10 text-secondary" />
           </div>
-          <h3 className="text-xl font-semibold text-neutral-400 mb-2">Drop your files here</h3>
-          <p className="text-neutral-300 mb-4">or</p>
-          <Button className="bg-secondary hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-            Select Files
+          <h3 className="text-2xl font-bold text-neutral-800 mb-3">Trascina qui i tuoi file</h3>
+          <p className="text-neutral-600 mb-5 text-lg">oppure</p>
+          <Button className="bg-secondary hover:bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold text-lg shadow-md">
+            Seleziona File
           </Button>
-          <p className="mt-4 text-sm text-neutral-300">
-            <span className="block sm:inline">Maximum file size: {Math.floor(maxFileSize / (1024 * 1024))}MB</span>
+          <p className="mt-6 text-sm text-neutral-500">
+            <span className="block sm:inline">Dimensione massima: {Math.floor(maxFileSize / (1024 * 1024))}MB</span>
+            {acceptedFileTypes.length > 0 && (
+              <span className="block sm:inline sm:ml-3">• Formati supportati: {acceptedFileTypes.join(', ')}</span>
+            )}
           </p>
         </div>
       )}

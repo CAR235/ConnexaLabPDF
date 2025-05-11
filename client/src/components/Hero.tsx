@@ -33,8 +33,8 @@ export function Hero() {
         toolRoute = '/tool/jpg-to-pdf';
       } else {
         toast({
-          title: "Unsupported file format",
-          description: "Please select a valid file format.",
+          title: "Formato file non supportato",
+          description: "Seleziona un formato di file valido.",
           variant: "destructive",
         });
         return;
@@ -59,22 +59,24 @@ export function Hero() {
   };
 
   return (
-    <section className="bg-white border-b border-gray-200">
-      <div className="container mx-auto px-4 py-12 md:py-20">
+    <section className="bg-gradient-to-r from-blue-50 via-white to-red-50 py-16 md:py-24">
+      <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-3xl md:text-4xl font-bold text-neutral-400 mb-4">
-            Every tool you need to work with PDFs in one place
+          <h1 className="text-4xl md:text-5xl font-bold text-neutral-800 mb-6 leading-tight">
+            Tutti gli strumenti <span className="text-primary">PDF</span> di cui hai bisogno in un unico posto
           </h1>
-          <p className="text-lg text-neutral-300 mb-8">
-            Every tool you need to use PDFs, at your fingertips. All are 100% free and easy to use! Merge, split, compress, convert, rotate, unlock and watermark PDFs with just a few clicks.
+          <p className="text-xl text-neutral-600 mb-10 leading-relaxed">
+            Unisci, dividi, comprimi, converti, ruota, sblocca e aggiungi filigrane ai tuoi PDF con pochi semplici clic. Tutti gli strumenti sono 100% gratuiti e facili da usare!
           </p>
-          <FileDropzone
-            onFilesAdded={handleFilesAdded}
-            multiple={true}
-            acceptedFileTypes={['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.jpg', '.jpeg', '.png']}
-            maxFileSize={100 * 1024 * 1024} // 100MB
-            className="bg-gray-100"
-          />
+          <div className="bg-white p-8 rounded-2xl shadow-xl">
+            <FileDropzone
+              onFilesAdded={handleFilesAdded}
+              multiple={true}
+              acceptedFileTypes={['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.jpg', '.jpeg', '.png']}
+              maxFileSize={100 * 1024 * 1024} // 100MB
+              className="bg-gray-50 border-2 border-dashed border-gray-300 hover:border-primary transition-colors"
+            />
+          </div>
         </div>
       </div>
     </section>

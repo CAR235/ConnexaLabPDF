@@ -188,26 +188,26 @@ export default function Tool() {
             <Link href="/">
               <a className="inline-flex items-center text-secondary hover:underline">
                 <ChevronLeft className="h-4 w-4 mr-1" />
-                Back to all tools
+                Torna a tutti gli strumenti
               </a>
             </Link>
           </div>
           
-          <div className="bg-white p-8 rounded-xl shadow-sm">
+          <div className="bg-white p-8 rounded-xl shadow-lg">
             <div className="flex items-center mb-6">
               <div className={`w-12 h-12 rounded-lg bg-${tool.color} bg-opacity-10 flex items-center justify-center mr-4`}>
                 <tool.icon className={`h-6 w-6 text-${tool.color}`} />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-neutral-400">{tool.name}</h1>
-                <p className="text-neutral-300">{tool.description}</p>
+                <h1 className="text-2xl font-bold text-neutral-800">{tool.name}</h1>
+                <p className="text-neutral-600">{tool.description}</p>
               </div>
             </div>
             
             {!result ? (
               <>
                 <div className="mb-6">
-                  <h2 className="font-semibold text-neutral-400 mb-2">Upload Files</h2>
+                  <h2 className="font-semibold text-neutral-800 mb-2">Carica File</h2>
                   <FileDropzone
                     onFilesAdded={handleFilesAdded}
                     multiple={tool.id === 'merge-pdf'}
@@ -218,7 +218,7 @@ export default function Tool() {
                 
                 {files.length > 0 && (
                   <div className="mb-6">
-                    <h2 className="font-semibold text-neutral-400 mb-2">Files to process</h2>
+                    <h2 className="font-semibold text-neutral-800 mb-2">File da elaborare</h2>
                     <FileList 
                       files={files} 
                       onRemove={handleRemoveFile} 
@@ -231,8 +231,8 @@ export default function Tool() {
                   {processing ? (
                     <div className="space-y-4">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-neutral-300">Processing</span>
-                        <span className="text-sm font-medium text-neutral-300">{Math.round(progress)}%</span>
+                        <span className="text-sm font-medium text-neutral-600">Elaborazione in corso</span>
+                        <span className="text-sm font-medium text-neutral-600">{Math.round(progress)}%</span>
                       </div>
                       <Progress value={progress} className="w-full" />
                     </div>
@@ -240,15 +240,15 @@ export default function Tool() {
                     <Button 
                       onClick={handleProcessFiles}
                       disabled={files.length === 0 || isUploading || isProcessing}
-                      className="w-full bg-primary hover:bg-red-600 text-white"
+                      className="w-full bg-primary hover:bg-red-600 text-white font-medium text-lg py-3"
                     >
                       {isUploading || isProcessing ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Processing...
+                          Elaborazione...
                         </>
                       ) : (
-                        `Process with ${tool.name}`
+                        `Elabora con ${tool.name}`
                       )}
                     </Button>
                   )}
@@ -259,15 +259,15 @@ export default function Tool() {
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
                   <CheckCircle className="h-8 w-8 text-green-500" />
                 </div>
-                <h3 className="text-xl font-semibold text-neutral-400 mb-2">Processing Complete!</h3>
-                <p className="text-neutral-300 mb-6">Your file is ready to download</p>
+                <h3 className="text-xl font-semibold text-neutral-800 mb-2">Elaborazione Completata!</h3>
+                <p className="text-neutral-600 mb-6">Il tuo file è pronto per il download</p>
                 
                 <Button 
                   onClick={handleDownload}
-                  className="bg-secondary hover:bg-blue-600 text-white"
+                  className="bg-secondary hover:bg-blue-600 text-white font-medium text-lg py-3 px-6"
                 >
                   <Download className="mr-2 h-4 w-4" />
-                  Download File
+                  Scarica File
                 </Button>
                 
                 <div className="mt-6">
@@ -278,14 +278,13 @@ export default function Tool() {
                     }}
                     className="text-secondary hover:underline text-sm"
                   >
-                    Process another file
+                    Elabora un altro file
                   </button>
                 </div>
               </div>
             )}
           </div>
         </main>
-        <Footer />
       </div>
     </>
   );
