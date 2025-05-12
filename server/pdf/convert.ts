@@ -111,16 +111,10 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
           const headerPara = docx.createP();
           headerPara.addText(`Page ${i + 1}`, { bold: true, font_size: 14 });
           
-          // Get page content
-          const operatorList = await page.getOperatorList();
-          const textItems = operatorList.fnArray
-            .map((fn, idx) => {
-              if (fn === 121) { // ShowText operator
-                return operatorList.argsArray[idx][0];
-              }
-              return '';
-            })
-            .filter(Boolean)
+          // Get page text content
+          const textContent = await page.getTextContent();
+          const textItems = textContent.items
+            .map(item => ('str' in item ? item.str : ''))
             .join(' ');
           
           // Add content paragraph
