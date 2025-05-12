@@ -102,40 +102,29 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
         // Create a Word document
         const docx = officegen('docx');
         
-        // Extract text content from each page
-        for (let i = 0; i < pages.length; i++) {
-          const page = pages[i];
+        // Extract text from each page
+        for (let i = 0; i < pdfDoc.getPageCount(); i++) {
+          const page = pdfDoc.getPage(i);
+          const text = await page.getText();
           
           // Create a paragraph for page header
           const headerPara = docx.createP();
           headerPara.addText(`Page ${i + 1}`, { bold: true, font_size: 14 });
           
-          // Get text content using getTextContent()
-          try {
-            const textContent = await page.getTextContent();
-            const textItems = textContent.items
-              .map(item => item.str)
-              .join(' ');
-            
-            // Add content paragraph
-            const contentPara = docx.createP();
-            contentPara.addText(textItems || 'No text content found');
-            
-            // Add page break except for last page
-            if (i < pages.length - 1) {
-              docx.createP().addLineBreak();
-            }
-          } catch (error) {
-            console.error(`Error extracting text from page ${i + 1}:`, error);
-            const contentPara = docx.createP();
-            contentPara.addText(`Failed to extract text from page ${i + 1}`);
+          // Add content paragraph
+          const contentPara = docx.createP();
+          contentPara.addText(text || 'No text content found');
+          
+          // Add page break except for last page
+          if (i < pdfDoc.getPageCount() - 1) {
+            docx.createP().addLineBreak();
           }
         }
         
         outputFileName = `${path.basename(file.originalFilename, '.pdf')}_${uuidv4()}.docx`;
         outputPath = path.join(process.cwd(), 'uploads', outputFileName);
         
-        const docxStream = fs.createWriteStream(outputPath);
+        const docxStream = require('fs').createWriteStream(outputPath);
         await new Promise((resolve, reject) => {
           docx.generate(docxStream, {
             'finalize': resolve,
