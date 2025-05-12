@@ -1,18 +1,20 @@
+
 import { PDFDocument } from 'pdf-lib';
 import fs from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { type File } from '@shared/schema';
 import { storage } from '../storage';
+import PDFNet from '@pdftron/pdfnet-node';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import sharp from 'sharp';
+
+const execPromise = promisify(exec);
 
 // Convert various formats to PDF
 export async function convertToPdf(files: File[], toolId: string): Promise<File> {
   try {
-    const doc2pdf = require('docx-pdf');
-    const xlsx2pdf = require('xlsx-pdf');
-    const pptx2pdf = require('pptx2pdf');
-    const sharp = require('sharp');
-
     const outputFileName = `converted_${uuidv4()}.pdf`;
     const outputPath = path.join(process.cwd(), 'uploads', outputFileName);
 
@@ -23,17 +25,32 @@ export async function convertToPdf(files: File[], toolId: string): Promise<File>
       switch (ext) {
         case '.docx':
         case '.doc':
-          await doc2pdf(file.path, outputPath);
+          await PDFNet.initialize();
+          await PDFNet.runWithCleanup(async () => {
+            const doc = await PDFNet.PDFDoc.create();
+            await PDFNet.Convert.toPdf(doc, file.path);
+            await doc.save(outputPath, PDFNet.SDFDoc.SaveOptions.e_linearized);
+          });
           break;
           
         case '.xlsx':
         case '.xls':
-          await xlsx2pdf(file.path, outputPath);
+          await PDFNet.initialize();
+          await PDFNet.runWithCleanup(async () => {
+            const doc = await PDFNet.PDFDoc.create();
+            await PDFNet.Convert.toPdf(doc, file.path);
+            await doc.save(outputPath, PDFNet.SDFDoc.SaveOptions.e_linearized);
+          });
           break;
           
         case '.pptx':
         case '.ppt':
-          await pptx2pdf(file.path, outputPath);
+          await PDFNet.initialize();
+          await PDFNet.runWithCleanup(async () => {
+            const doc = await PDFNet.PDFDoc.create();
+            await PDFNet.Convert.toPdf(doc, file.path);
+            await doc.save(outputPath, PDFNet.SDFDoc.SaveOptions.e_linearized);
+          });
           break;
           
         case '.jpg':
@@ -43,31 +60,34 @@ export async function convertToPdf(files: File[], toolId: string): Promise<File>
           await image.pdf().toFile(outputPath);
           break;
           
+        case '.html':
+          const pdfDoc = await PDFDocument.create();
+          const page = pdfDoc.addPage();
+          const htmlContent = await fs.readFile(file.path, 'utf-8');
+          
+          await PDFNet.initialize();
+          await PDFNet.runWithCleanup(async () => {
+            const doc = await PDFNet.PDFDoc.create();
+            const htmlConv = await PDFNet.HTML2PDF.create();
+            await htmlConv.insertFromHtmlString(htmlContent);
+            await htmlConv.convert(doc);
+            await doc.save(outputPath, PDFNet.SDFDoc.SaveOptions.e_linearized);
+          });
+          break;
+          
         default:
           throw new Error(`Unsupported file format: ${ext}`);
       }
     }
-    
-    // In a real implementation, this would process the input files based on their format
-    // and create appropriate PDF content
-    
-    // Save the PDF
-    const pdfBytes = await pdfDoc.save();
-    await fs.writeFile(outputPath, pdfBytes);
-    
-    // Determine original filename based on input format
-    let originalFilename = 'converted.pdf';
-    if (files.length > 0) {
-      const baseFileName = path.basename(files[0].originalFilename, path.extname(files[0].originalFilename));
-      originalFilename = `${baseFileName}.pdf`;
-    }
+
+    const stats = await fs.stat(outputPath);
     
     // Create a file entry
     const outputFile = await storage.createFile({
       filename: outputFileName,
-      originalFilename: originalFilename,
+      originalFilename: path.basename(files[0].originalFilename, path.extname(files[0].originalFilename)) + '.pdf',
       path: outputPath,
-      size: pdfBytes.length,
+      size: stats.size,
       mimeType: 'application/pdf',
       userId: files[0].userId,
       metadata: {
@@ -89,51 +109,62 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
     if (!file.mimeType.includes('pdf')) {
       throw new Error(`File ${file.originalFilename} is not a PDF`);
     }
+
+    const outputFileName = `converted_${uuidv4()}`;
+    const outputPath = path.join(process.cwd(), 'uploads', outputFileName);
     
-    // Determine output format based on toolId
-    let outputFormat: string;
-    let outputMimeType: string;
+    await PDFNet.initialize();
     
     switch (toolId) {
       case 'pdf-to-word':
-        outputFormat = 'docx';
-        outputMimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        await PDFNet.runWithCleanup(async () => {
+          const doc = await PDFNet.PDFDoc.createFromFilePath(file.path);
+          const conv = await PDFNet.Convert.fileToWord();
+          await conv.convert(doc, outputPath + '.docx');
+        });
         break;
+        
       case 'pdf-to-excel':
-        outputFormat = 'xlsx';
-        outputMimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        await PDFNet.runWithCleanup(async () => {
+          const doc = await PDFNet.PDFDoc.createFromFilePath(file.path);
+          const conv = await PDFNet.Convert.fileToExcel();
+          await conv.convert(doc, outputPath + '.xlsx');
+        });
         break;
+        
       case 'pdf-to-powerpoint':
-        outputFormat = 'pptx';
-        outputMimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+        await PDFNet.runWithCleanup(async () => {
+          const doc = await PDFNet.PDFDoc.createFromFilePath(file.path);
+          const conv = await PDFNet.Convert.fileToPowerPoint();
+          await conv.convert(doc, outputPath + '.pptx');
+        });
         break;
+        
       case 'pdf-to-jpg':
-        outputFormat = 'jpg';
-        outputMimeType = 'image/jpeg';
+        await PDFNet.runWithCleanup(async () => {
+          const doc = await PDFNet.PDFDoc.createFromFilePath(file.path);
+          const pdfDraw = await PDFNet.PDFDraw.create(92);
+          
+          for (let i = 1; i <= await doc.getPageCount(); i++) {
+            const page = await doc.getPage(i);
+            await pdfDraw.export(page, `${outputPath}_${i}.jpg`);
+          }
+        });
         break;
+        
       default:
         throw new Error(`Unsupported conversion format: ${toolId}`);
     }
+
+    const finalPath = await findConvertedFile(outputPath);
+    const stats = await fs.stat(finalPath);
     
-    // In a production environment, this would use specialized libraries for each format
-    // For this implementation, we'll just create an empty file with the right extension
-    
-    const baseFileName = path.basename(file.originalFilename, '.pdf');
-    const outputFileName = `${baseFileName}_${uuidv4()}.${outputFormat}`;
-    const outputPath = path.join(process.cwd(), 'uploads', outputFileName);
-    
-    // For demonstration purposes, write a minimal file
-    // In a real implementation, this would convert the PDF content to the target format
-    await fs.writeFile(outputPath, 'Placeholder content for converted file');
-    
-    // Create a file entry
-    const stats = await fs.stat(outputPath);
     const outputFile = await storage.createFile({
-      filename: outputFileName,
-      originalFilename: `${baseFileName}.${outputFormat}`,
-      path: outputPath,
+      filename: path.basename(finalPath),
+      originalFilename: path.basename(finalPath),
+      path: finalPath,
       size: stats.size,
-      mimeType: outputMimeType,
+      mimeType: getMimeType(toolId),
       userId: file.userId,
       metadata: {
         sourceFile: file.id,
@@ -145,5 +176,27 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
   } catch (error) {
     console.error('Error converting from PDF:', error);
     throw error;
+  }
+}
+
+async function findConvertedFile(basePath: string): Promise<string> {
+  const dir = path.dirname(basePath);
+  const files = await fs.readdir(dir);
+  const baseFileName = path.basename(basePath);
+  return path.join(dir, files.find(f => f.startsWith(baseFileName)) || '');
+}
+
+function getMimeType(toolId: string): string {
+  switch (toolId) {
+    case 'pdf-to-word':
+      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    case 'pdf-to-excel':
+      return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    case 'pdf-to-powerpoint':
+      return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+    case 'pdf-to-jpg':
+      return 'image/jpeg';
+    default:
+      return 'application/octet-stream';
   }
 }
