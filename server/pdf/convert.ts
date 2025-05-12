@@ -72,8 +72,9 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
       throw new Error(`File ${file.originalFilename} is not a PDF`);
     }
 
-    const PDFNet = require('@pdftron/pdfnet-node');
+    const { PDFNet } = await import('@pdftron/pdfnet-node');
     await PDFNet.initialize();
+    await PDFNet.addResourceSearchPath('./');
 
     let outputFileName: string;
     let outputPath: string;
@@ -84,11 +85,14 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
         outputPath = path.join(process.cwd(), 'uploads', outputFileName);
 
         await PDFNet.runWithCleanup(async () => {
+          if (!(await PDFNet.StructuredOutputModule.isModuleAvailable())) {
+            throw new Error('StructuredOutputModule not available');
+          }
           const doc = await PDFNet.PDFDoc.createFromFilePath(file.path);
           const pdfDraw = await PDFNet.PDFDraw.create(92);
           const page = await doc.getPage(1);
           await pdfDraw.export(page, outputPath);
-        });
+        }, 'demo:1630195943448:78e1a25a0300000000025e875de658e8e1f4b5a21b2dd75596e782d3d06');
         break;
 
       case 'pdf-to-word':
@@ -96,10 +100,12 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
         outputPath = path.join(process.cwd(), 'uploads', outputFileName);
 
         await PDFNet.runWithCleanup(async () => {
+          if (!(await PDFNet.StructuredOutputModule.isModuleAvailable())) {
+            throw new Error('StructuredOutputModule not available');
+          }
           const doc = await PDFNet.PDFDoc.createFromFilePath(file.path);
-          const conv = await PDFNet.Convert.createConverterFromFilter(PDFNet.Convert.Filter.e_DOCX);
-          await conv.convert(doc, outputPath);
-        });
+          await PDFNet.Convert.fileToWord(file.path, outputPath);
+        }, 'demo:1630195943448:78e1a25a0300000000025e875de658e8e1f4b5a21b2dd75596e782d3d06');
         break;
 
       default:
