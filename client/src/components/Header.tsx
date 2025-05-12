@@ -17,7 +17,7 @@ export function Header() {
         <div className="flex items-center">
           <Link href="/">
             <div className="flex items-center cursor-pointer">
-              <img src="/Risorsa%2013.svg" alt="Connexa Lab" className="h-8 md:h-10" />
+              <img src=" /src/Logo.png" alt="Connexa Lab" className="h-10 md:h-200" />
             </div>
           </Link>
           <nav className="hidden md:flex ml-10 space-x-8">
