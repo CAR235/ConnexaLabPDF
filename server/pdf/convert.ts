@@ -42,26 +42,6 @@ export async function convertToPdf(files: File[], toolId: string): Promise<File>
           maxWidth: 500,
         });
       }
-      
-      if (toolId === 'pdf-to-word') {
-        const aspose = require('@aspose/pdf');
-        const pdfDocument = new aspose.Document(file.path);
-        const outputPath = path.join(process.cwd(), 'uploads', `${path.basename(file.originalFilename, '.pdf')}.docx`);
-        pdfDocument.save(outputPath, aspose.SaveFormat.DocX);
-        
-        return await storage.createFile({
-          filename: path.basename(outputPath),
-          originalFilename: `${path.basename(file.originalFilename, '.pdf')}.docx`,
-          path: outputPath,
-          size: (await fs.stat(outputPath)).size,
-          mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          userId: file.userId,
-          metadata: {
-            sourceFile: file.id,
-            conversionType: toolId
-          }
-        });
-      }
       // Add other format conversions as needed
     }
 
