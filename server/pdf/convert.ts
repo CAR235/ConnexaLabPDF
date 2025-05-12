@@ -1,4 +1,3 @@
-
 import { PDFDocument } from 'pdf-lib';
 import fs from 'fs/promises';
 import path from 'path';
@@ -18,13 +17,13 @@ export async function convertToPdf(files: File[], toolId: string): Promise<File>
 
     for (const file of files) {
       const fileContent = await fs.readFile(file.path);
-      
+
       if (file.mimeType.includes('image')) {
         // Convert image to PDF
         const page = pdfDoc.addPage([612, 792]);
         const image = await pdfDoc.embedJpg(fileContent);
         const { width, height } = image.scale(0.8);
-        
+
         page.drawImage(image, {
           x: (612 - width) / 2,
           y: (792 - height) / 2,
@@ -73,63 +72,33 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
       throw new Error(`File ${file.originalFilename} is not a PDF`);
     }
 
-    const fileContent = await fs.readFile(file.path);
-    const pdfDoc = await PDFDocument.load(fileContent);
-    const pages = pdfDoc.getPages();
-    
+    const PDFNet = require('@pdftron/pdfnet-node');
+    await PDFNet.initialize();
+
     let outputFileName: string;
     let outputPath: string;
-    let outputContent: Buffer;
 
     switch (toolId) {
       case 'pdf-to-jpg':
-        // Convert first page to JPG
-        const page = pages[0];
-        const canvas = createCanvas(page.getWidth(), page.getHeight());
-        const ctx = canvas.getContext('2d');
-        
-        // Draw PDF page to canvas (simplified version)
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, page.getWidth(), page.getHeight());
-        
         outputFileName = `${path.basename(file.originalFilename, '.pdf')}_${uuidv4()}.jpg`;
         outputPath = path.join(process.cwd(), 'uploads', outputFileName);
-        outputContent = canvas.toBuffer('image/jpeg');
-        await fs.writeFile(outputPath, outputContent);
+
+        await PDFNet.runWithCleanup(async () => {
+          const doc = await PDFNet.PDFDoc.createFromFilePath(file.path);
+          const pdfDraw = await PDFNet.PDFDraw.create(92);
+          const page = await doc.getPage(1);
+          await pdfDraw.export(page, outputPath);
+        });
         break;
 
       case 'pdf-to-word':
-        // Create a Word document
-        const docx = officegen('docx');
-        
-        // Extract text from each page
-        for (let i = 0; i < pdfDoc.getPageCount(); i++) {
-          const page = pdfDoc.getPage(i);
-          const text = await page.getText();
-          
-          // Create a paragraph for page header
-          const headerPara = docx.createP();
-          headerPara.addText(`Page ${i + 1}`, { bold: true, font_size: 14 });
-          
-          // Add content paragraph
-          const contentPara = docx.createP();
-          contentPara.addText(text || 'No text content found');
-          
-          // Add page break except for last page
-          if (i < pdfDoc.getPageCount() - 1) {
-            docx.createP().addLineBreak();
-          }
-        }
-        
         outputFileName = `${path.basename(file.originalFilename, '.pdf')}_${uuidv4()}.docx`;
         outputPath = path.join(process.cwd(), 'uploads', outputFileName);
-        
-        const docxStream = require('fs').createWriteStream(outputPath);
-        await new Promise((resolve, reject) => {
-          docx.generate(docxStream, {
-            'finalize': resolve,
-            'error': reject
-          });
+
+        await PDFNet.runWithCleanup(async () => {
+          const doc = await PDFNet.PDFDoc.createFromFilePath(file.path);
+          const conv = await PDFNet.Convert.createConverterFromFilter(PDFNet.Convert.Filter.e_DOCX);
+          await conv.convert(doc, outputPath);
         });
         break;
 
