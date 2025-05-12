@@ -17,8 +17,7 @@ export function Header() {
         <div className="flex items-center">
           <Link href="/">
             <div className="flex items-center cursor-pointer">
-              <span className="accent-gradient font-bold text-2xl md:text-3xl">Connexa</span>
-              <span className="font-light text-2xl md:text-3xl ml-1">Lab</span>
+              <img src="/Risorsa 13.svg" alt="Connexa Lab" className="h-8 md:h-10" />
             </div>
           </Link>
           <nav className="hidden md:flex ml-10 space-x-8">
