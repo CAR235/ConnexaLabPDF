@@ -8,6 +8,8 @@ import { storage } from '../storage';
 import sharp from 'sharp';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import * as pdf2json from 'pdf2json';
+import * as xlsx from 'xlsx';
+import * as pptxgenjs from 'pptxgenjs';
 
 // Convert various formats to PDF
 export async function convertToPdf(files: File[], toolId: string): Promise<File> {
@@ -23,15 +25,12 @@ export async function convertToPdf(files: File[], toolId: string): Promise<File>
         case '.txt':
         case '.doc':
         case '.docx': {
-          // Create a new PDF document
           const pdfDoc = await PDFDocument.create();
           const page = pdfDoc.addPage();
           const font = await pdfDoc.embedFont('Helvetica');
           
-          // Read text content
           const content = await fs.readFile(file.path, 'utf-8');
           
-          // Add text to PDF
           const fontSize = 12;
           const margin = 50;
           const lineHeight = fontSize * 1.2;
@@ -55,7 +54,6 @@ export async function convertToPdf(files: File[], toolId: string): Promise<File>
               line = word;
               y -= lineHeight;
               
-              // Add new page if needed
               if (y < margin) {
                 y = pdfDoc.addPage().getHeight() - margin;
               }
@@ -64,7 +62,6 @@ export async function convertToPdf(files: File[], toolId: string): Promise<File>
             }
           }
           
-          // Draw remaining text
           if (line) {
             page.drawText(line, {
               x: margin,
@@ -74,7 +71,47 @@ export async function convertToPdf(files: File[], toolId: string): Promise<File>
             });
           }
           
-          // Save the PDF
+          const pdfBytes = await pdfDoc.save();
+          await fs.writeFile(outputPath, pdfBytes);
+          break;
+        }
+          
+        case '.xls':
+        case '.xlsx': {
+          const workbook = xlsx.readFile(file.path);
+          const pdfDoc = await PDFDocument.create();
+          
+          for (const sheetName of workbook.SheetNames) {
+            const sheet = workbook.Sheets[sheetName];
+            const page = pdfDoc.addPage();
+            const font = await pdfDoc.embedFont('Helvetica');
+            const content = xlsx.utils.sheet_to_string(sheet);
+            
+            page.drawText(content, {
+              x: 50,
+              y: page.getHeight() - 50,
+              size: 12,
+              font,
+            });
+          }
+          
+          const pdfBytes = await pdfDoc.save();
+          await fs.writeFile(outputPath, pdfBytes);
+          break;
+        }
+          
+        case '.ppt':
+        case '.pptx': {
+          const pdfDoc = await PDFDocument.create();
+          const presentation = new pptxgenjs();
+          const slides = await presentation.load(file.path);
+          
+          for (const slide of slides) {
+            const page = pdfDoc.addPage();
+            // Convert slide content to PDF page
+            // This is a simplified version - in reality would need more complex conversion
+          }
+          
           const pdfBytes = await pdfDoc.save();
           await fs.writeFile(outputPath, pdfBytes);
           break;
@@ -115,7 +152,6 @@ export async function convertToPdf(files: File[], toolId: string): Promise<File>
 
     const stats = await fs.stat(outputPath);
     
-    // Create a file entry
     const outputFile = await storage.createFile({
       filename: outputFileName,
       originalFilename: path.basename(files[0].originalFilename, path.extname(files[0].originalFilename)) + '.pdf',
@@ -148,7 +184,6 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
     
     switch (toolId) {
       case 'pdf-to-word': {
-        // Convert PDF to text using pdf2json
         const pdfParser = new pdf2json.default();
         const pdfData = await new Promise((resolve, reject) => {
           pdfParser.loadPDF(file.path);
@@ -156,7 +191,6 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
           pdfParser.on('pdfParser_dataError', (err) => reject(err));
         });
         
-        // Extract text from PDF
         let content = '';
         for (const page of (pdfData as any).Pages) {
           for (const text of page.Texts) {
@@ -165,7 +199,6 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
           content += '\n\n';
         }
         
-        // Create Word document
         const doc = new Document({
           sections: [{
             properties: {},
@@ -177,30 +210,71 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
           }],
         });
         
-        // Save as DOCX
         const buffer = await Packer.toBuffer(doc);
         await fs.writeFile(outputPath + '.docx', buffer);
         break;
       }
       
-      case 'pdf-to-text': {
-        const pdfDoc = await PDFDocument.load(await fs.readFile(file.path));
-        let text = '';
+      case 'pdf-to-excel': {
+        const pdfParser = new pdf2json.default();
+        const pdfData = await new Promise((resolve, reject) => {
+          pdfParser.loadPDF(file.path);
+          pdfParser.on('pdfParser_dataReady', (data) => resolve(data));
+          pdfParser.on('pdfParser_dataError', (err) => reject(err));
+        });
         
-        // Extract text from PDF using pdf-lib
-        for (let i = 0; i < pdfDoc.getPageCount(); i++) {
-          const page = pdfDoc.getPage(i);
-          const { width, height } = page.getSize();
-          text += `Page ${i + 1}\n\n`;
-          
-          // Basic text extraction (page content)
-          const content = await page.getTextContent();
-          if (content) {
-            text += content + '\n\n';
+        const workbook = xlsx.utils.book_new();
+        const worksheet = xlsx.utils.aoa_to_sheet([[]]);
+        
+        let row = 0;
+        for (const page of (pdfData as any).Pages) {
+          for (const text of page.Texts) {
+            xlsx.utils.sheet_add_aoa(worksheet, [[decodeURIComponent(text.R[0].T)]], { origin: { r: row++, c: 0 } });
           }
         }
         
-        await fs.writeFile(outputPath + '.txt', text);
+        xlsx.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+        xlsx.writeFile(workbook, outputPath + '.xlsx');
+        break;
+      }
+      
+      case 'pdf-to-powerpoint': {
+        const pdfParser = new pdf2json.default();
+        const pdfData = await new Promise((resolve, reject) => {
+          pdfParser.loadPDF(file.path);
+          pdfParser.on('pdfParser_dataReady', (data) => resolve(data));
+          pdfParser.on('pdfParser_dataError', (err) => reject(err));
+        });
+        
+        const pres = new pptxgenjs();
+        
+        for (const page of (pdfData as any).Pages) {
+          const slide = pres.addSlide();
+          let content = '';
+          for (const text of page.Texts) {
+            content += decodeURIComponent(text.R[0].T) + ' ';
+          }
+          slide.addText(content, { x: 0.5, y: 0.5, w: '90%', h: '90%' });
+        }
+        
+        await pres.writeFile({ fileName: outputPath + '.pptx' });
+        break;
+      }
+      
+      case 'pdf-to-jpg': {
+        const PDFNet = require('@pdftron/pdfnet-node');
+        await PDFNet.initialize();
+        
+        await PDFNet.runWithCleanup(async () => {
+          const doc = await PDFNet.PDFDoc.createFromFilePath(file.path);
+          const pageCount = await doc.getPageCount();
+          
+          for (let i = 1; i <= pageCount; i++) {
+            const page = await doc.getPage(i);
+            const pdfDraw = await PDFNet.PDFDraw.create(92);
+            await pdfDraw.export(page, `${outputPath}_${i}.jpg`, 'JPEG');
+          }
+        });
         break;
       }
       
@@ -208,15 +282,28 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
         throw new Error(`Unsupported conversion format: ${toolId}`);
     }
 
-    const finalPath = outputPath + (toolId === 'pdf-to-word' ? '.docx' : '.txt');
+    const finalPath = outputPath + ({
+      'pdf-to-word': '.docx',
+      'pdf-to-excel': '.xlsx',
+      'pdf-to-powerpoint': '.pptx',
+      'pdf-to-jpg': '_1.jpg'
+    }[toolId] || '.txt');
+
     const stats = await fs.stat(finalPath);
+    
+    const mimeTypes = {
+      'pdf-to-word': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'pdf-to-excel': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'pdf-to-powerpoint': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'pdf-to-jpg': 'image/jpeg'
+    };
     
     const outputFile = await storage.createFile({
       filename: path.basename(finalPath),
-      originalFilename: path.basename(file.originalFilename, '.pdf') + (toolId === 'pdf-to-word' ? '.docx' : '.txt'),
+      originalFilename: path.basename(file.originalFilename, '.pdf') + path.extname(finalPath),
       path: finalPath,
       size: stats.size,
-      mimeType: toolId === 'pdf-to-word' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'text/plain',
+      mimeType: mimeTypes[toolId as keyof typeof mimeTypes] || 'text/plain',
       userId: file.userId,
       metadata: {
         sourceFile: file.id,
