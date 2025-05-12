@@ -22,11 +22,27 @@ export async function protectPdf(file: File, options: ProtectPdfOptions): Promis
     // Load the PDF into pdf-lib
     const pdfDoc = await PDFDocument.load(fileBuffer);
     
-    // In a real implementation, we would set the user and owner passwords and permissions
-    // pdf-lib doesn't fully support encryption, so in a real app we would use another library
-    // like qpdf or hummus
+    const qpdf = require('node-qpdf');
     
-    // For now, we'll just create a new PDF
+    // Set encryption options
+    const encryptOptions = {
+      keyLength: 256,
+      password: options.password,
+      ownerPassword: options.password,
+      userPassword: options.password,
+      permissions: {
+        printing: options.permissions?.allowPrinting ?? false,
+        modifying: options.permissions?.allowModifying ?? false,
+        copying: options.permissions?.allowCopying ?? false,
+        annotating: options.permissions?.allowAnnotating ?? false,
+        fillingForms: options.permissions?.allowFillingForms ?? false,
+        contentAccessibility: options.permissions?.allowAccessibility ?? true,
+        documentAssembly: options.permissions?.allowAssembly ?? false
+      }
+    };
+
+    // Encrypt the PDF
+    await qpdf.encrypt(file.path, outputPath, encryptOptions);
     const outputFileName = `protected_${uuidv4()}.pdf`;
     const outputPath = path.join(process.cwd(), 'uploads', outputFileName);
     

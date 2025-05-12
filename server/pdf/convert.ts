@@ -8,17 +8,45 @@ import { storage } from '../storage';
 // Convert various formats to PDF
 export async function convertToPdf(files: File[], toolId: string): Promise<File> {
   try {
-    // In a production environment, this would use specialized libraries for each format
-    // For this implementation, we'll create a simple PDF
-    
+    const doc2pdf = require('docx-pdf');
+    const xlsx2pdf = require('xlsx-pdf');
+    const pptx2pdf = require('pptx2pdf');
+    const sharp = require('sharp');
+
     const outputFileName = `converted_${uuidv4()}.pdf`;
     const outputPath = path.join(process.cwd(), 'uploads', outputFileName);
-    
-    // Create a new PDF document
-    const pdfDoc = await PDFDocument.create();
-    
-    // Add a blank page
-    pdfDoc.addPage([612, 792]); // US Letter size
+
+    // Convert based on input file type
+    for (const file of files) {
+      const ext = path.extname(file.originalFilename).toLowerCase();
+      
+      switch (ext) {
+        case '.docx':
+        case '.doc':
+          await doc2pdf(file.path, outputPath);
+          break;
+          
+        case '.xlsx':
+        case '.xls':
+          await xlsx2pdf(file.path, outputPath);
+          break;
+          
+        case '.pptx':
+        case '.ppt':
+          await pptx2pdf(file.path, outputPath);
+          break;
+          
+        case '.jpg':
+        case '.jpeg':
+        case '.png':
+          const image = await sharp(file.path);
+          await image.pdf().toFile(outputPath);
+          break;
+          
+        default:
+          throw new Error(`Unsupported file format: ${ext}`);
+      }
+    }
     
     // In a real implementation, this would process the input files based on their format
     // and create appropriate PDF content

@@ -18,8 +18,23 @@ export async function compressPdf(file: File, options?: CompressPdfOptions): Pro
     // Load the PDF into pdf-lib
     const pdfDoc = await PDFDocument.load(fileBuffer);
     
-    // In a real implementation, this would apply compression settings
-    // For now, we'll just resave the PDF which might apply some basic compression
+    const PDFNet = require('@pdftron/pdfnet-node');
+    
+    await PDFNet.initialize();
+    await PDFNet.runWithCleanup(async () => {
+      const doc = await PDFNet.PDFDoc.createFromFilePath(file.path);
+      
+      const imageSettings = new PDFNet.Optimizer.ImageSettings();
+      imageSettings.setCompressionMode(PDFNet.Optimizer.ImageSettings.CompressionMode.e_jpeg);
+      imageSettings.setQuality(options?.quality === 'high' ? 80 : options?.quality === 'low' ? 30 : 50);
+      
+      const settings = new PDFNet.Optimizer.OptimizerSettings();
+      settings.setColorImageSettings(imageSettings);
+      settings.setGrayscaleImageSettings(imageSettings);
+      
+      await doc.optimize(settings);
+      await doc.save(outputPath, PDFNet.SDFDoc.SaveOptions.e_linearized);
+    });
     
     const outputFileName = `compressed_${uuidv4()}.pdf`;
     const outputPath = path.join(process.cwd(), 'uploads', outputFileName);
@@ -124,8 +139,34 @@ export async function addPageNumbers(file: File, options?: PageNumberOptions): P
     // Load the PDF into pdf-lib
     const pdfDoc = await PDFDocument.load(fileBuffer);
     
-    // In a real implementation, this would add page numbers to each page
-    // For now, we'll just save the original PDF
+    await PDFNet.initialize();
+    await PDFNet.runWithCleanup(async () => {
+      const doc = await PDFNet.PDFDoc.createFromFilePath(file.path);
+      const pageCount = await doc.getPageCount();
+      
+      for (let i = 1; i <= pageCount; i++) {
+        const page = await doc.getPage(i);
+        const pageRect = await page.getRect();
+        
+        const element = await PDFNet.ElementBuilder.create();
+        const writer = await PDFNet.ElementWriter.create();
+        await writer.begin(page);
+        
+        // Add page number at bottom center
+        const text = await element.createTextBegin(
+          await PDFNet.Font.create(doc, PDFNet.Font.StandardType1Font.e_helvetica),
+          12
+        );
+        
+        await text.setTextMatrix(1, 0, 0, 1, pageRect.x2/2 - 20, pageRect.y1 + 20);
+        await text.writeText(`${i} / ${pageCount}`);
+        await writer.writePlacedElement(await element.createTextEnd());
+        
+        await writer.end();
+      }
+      
+      await doc.save(outputPath, PDFNet.SDFDoc.SaveOptions.e_linearized);
+    });
     
     const outputFileName = `numbered_${uuidv4()}.pdf`;
     const outputPath = path.join(process.cwd(), 'uploads', outputFileName);
