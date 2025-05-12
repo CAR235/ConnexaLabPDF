@@ -1,11 +1,13 @@
 
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { PDFDocument } from 'pdf-lib';
 import fs from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { type File } from '@shared/schema';
 import { storage } from '../storage';
 import sharp from 'sharp';
+import { Document, Packer, Paragraph, TextRun } from 'docx';
+import * as pdf2json from 'pdf2json';
 
 // Convert various formats to PDF
 export async function convertToPdf(files: File[], toolId: string): Promise<File> {
@@ -20,11 +22,11 @@ export async function convertToPdf(files: File[], toolId: string): Promise<File>
       switch (ext) {
         case '.txt':
         case '.doc':
-        case '.docx':
+        case '.docx': {
           // Create a new PDF document
           const pdfDoc = await PDFDocument.create();
           const page = pdfDoc.addPage();
-          const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+          const font = await pdfDoc.embedFont('Helvetica');
           
           // Read text content
           const content = await fs.readFile(file.path, 'utf-8');
@@ -48,7 +50,6 @@ export async function convertToPdf(files: File[], toolId: string): Promise<File>
                 y,
                 size: fontSize,
                 font,
-                color: rgb(0, 0, 0),
               });
               
               line = word;
@@ -70,7 +71,6 @@ export async function convertToPdf(files: File[], toolId: string): Promise<File>
               y,
               size: fontSize,
               font,
-              color: rgb(0, 0, 0),
             });
           }
           
@@ -78,26 +78,27 @@ export async function convertToPdf(files: File[], toolId: string): Promise<File>
           const pdfBytes = await pdfDoc.save();
           await fs.writeFile(outputPath, pdfBytes);
           break;
+        }
           
         case '.jpg':
         case '.jpeg':
-        case '.png':
-          const image = await sharp(file.path);
+        case '.png': {
+          const image = sharp(file.path);
           await image.pdf().toFile(outputPath);
           break;
+        }
           
-        case '.html':
+        case '.html': {
           const htmlContent = await fs.readFile(file.path, 'utf-8');
           const htmlDoc = await PDFDocument.create();
           const htmlPage = htmlDoc.addPage();
-          const htmlFont = await htmlDoc.embedFont(StandardFonts.Helvetica);
+          const htmlFont = await htmlDoc.embedFont('Helvetica');
           
           htmlPage.drawText(htmlContent.replace(/<[^>]*>/g, ' '), {
             x: 50,
             y: htmlPage.getHeight() - 50,
             size: 12,
             font: htmlFont,
-            color: rgb(0, 0, 0),
             lineHeight: 16,
             maxWidth: htmlPage.getWidth() - 100,
           });
@@ -105,6 +106,7 @@ export async function convertToPdf(files: File[], toolId: string): Promise<File>
           const htmlPdfBytes = await htmlDoc.save();
           await fs.writeFile(outputPath, htmlPdfBytes);
           break;
+        }
           
         default:
           throw new Error(`Unsupported file format: ${ext}`);
@@ -146,11 +148,8 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
     
     switch (toolId) {
       case 'pdf-to-word': {
-        const pdf2json = require('pdf2json');
-        const docx = require('docx');
-        
-        // Convert PDF to text content
-        const pdfParser = new pdf2json();
+        // Convert PDF to text using pdf2json
+        const pdfParser = new pdf2json.default();
         const pdfData = await new Promise((resolve, reject) => {
           pdfParser.loadPDF(file.path);
           pdfParser.on('pdfParser_dataReady', (data) => resolve(data));
@@ -159,7 +158,7 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
         
         // Extract text from PDF
         let content = '';
-        for (const page of pdfData.Pages) {
+        for (const page of (pdfData as any).Pages) {
           for (const text of page.Texts) {
             content += decodeURIComponent(text.R[0].T) + ' ';
           }
@@ -167,46 +166,57 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
         }
         
         // Create Word document
-        const doc = new docx.Document({
+        const doc = new Document({
           sections: [{
             properties: {},
             children: [
-              new docx.Paragraph({
-                children: [new docx.TextRun(content)],
+              new Paragraph({
+                children: [new TextRun(content)],
               }),
             ],
           }],
         });
         
         // Save as DOCX
-        const buffer = await docx.Packer.toBuffer(doc);
+        const buffer = await Packer.toBuffer(doc);
         await fs.writeFile(outputPath + '.docx', buffer);
         break;
       }
       
-      case 'pdf-to-text':
+      case 'pdf-to-text': {
         const pdfDoc = await PDFDocument.load(await fs.readFile(file.path));
         let text = '';
+        
+        // Extract text from PDF using pdf-lib
         for (let i = 0; i < pdfDoc.getPageCount(); i++) {
           const page = pdfDoc.getPage(i);
+          const { width, height } = page.getSize();
           text += `Page ${i + 1}\n\n`;
+          
+          // Basic text extraction (page content)
+          const content = await page.getTextContent();
+          if (content) {
+            text += content + '\n\n';
+          }
         }
+        
         await fs.writeFile(outputPath + '.txt', text);
         break;
-        
+      }
+      
       default:
         throw new Error(`Unsupported conversion format: ${toolId}`);
     }
 
-    const finalPath = await findConvertedFile(outputPath);
+    const finalPath = outputPath + (toolId === 'pdf-to-word' ? '.docx' : '.txt');
     const stats = await fs.stat(finalPath);
     
     const outputFile = await storage.createFile({
       filename: path.basename(finalPath),
-      originalFilename: path.basename(finalPath),
+      originalFilename: path.basename(file.originalFilename, '.pdf') + (toolId === 'pdf-to-word' ? '.docx' : '.txt'),
       path: finalPath,
       size: stats.size,
-      mimeType: getMimeType(toolId),
+      mimeType: toolId === 'pdf-to-word' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'text/plain',
       userId: file.userId,
       metadata: {
         sourceFile: file.id,
@@ -218,21 +228,5 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
   } catch (error) {
     console.error('Error converting from PDF:', error);
     throw error;
-  }
-}
-
-async function findConvertedFile(basePath: string): Promise<string> {
-  const dir = path.dirname(basePath);
-  const files = await fs.readdir(dir);
-  const baseFileName = path.basename(basePath);
-  return path.join(dir, files.find(f => f.startsWith(baseFileName)) || '');
-}
-
-function getMimeType(toolId: string): string {
-  switch (toolId) {
-    case 'pdf-to-text':
-      return 'text/plain';
-    default:
-      return 'application/octet-stream';
   }
 }
