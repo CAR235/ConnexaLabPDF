@@ -112,9 +112,10 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
           headerPara.addText(`Page ${i + 1}`, { bold: true, font_size: 14 });
           
           // Get page text content
-          const textContent = await pages[i].getTextContent();
+          const page = pages[i];
+          const textContent = await page.textContent();
           const textItems = textContent.items
-            .map(item => ('str' in item ? item.str : ''))
+            .map(item => ('text' in item ? item.text : ''))
             .join(' ');
           
           // Add content paragraph
