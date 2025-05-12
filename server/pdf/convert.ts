@@ -25,42 +25,50 @@ export async function convertToPdf(files: File[], toolId: string): Promise<File>
         case '.txt':
         case '.doc':
         case '.docx': {
-          const docxBuffer = await fs.readFile(file.path);
           const pdfDoc = await PDFDocument.create();
-          
-          // Extract text and formatting from DOCX
-          const result = await new Promise((resolve) => {
-            const mammoth = require('mammoth');
-            mammoth.convertToHtml({ buffer: docxBuffer })
-              .then((result: any) => resolve(result));
-          });
-          
-          const content = (result as any).value;
           const page = pdfDoc.addPage();
           const font = await pdfDoc.embedFont('Helvetica');
           
-          // Preserve formatting with HTML parsing
-          const lines = content.split(/<[^>]*>/g).filter(Boolean);
+          const content = await fs.readFile(file.path, 'utf-8');
+          
           const fontSize = 12;
           const margin = 50;
           const lineHeight = fontSize * 1.2;
           
+          const words = content.split(/\s+/);
+          let line = '';
           let y = page.getHeight() - margin;
           
-          for (const line of lines) {
-            if (y < margin) {
-              y = pdfDoc.addPage().getHeight() - margin;
-            }
+          for (const word of words) {
+            const testLine = line + (line ? ' ' : '') + word;
+            const width = font.widthOfTextAtSize(testLine, fontSize);
             
-            page.drawText(line.trim(), {
+            if (width > page.getWidth() - 2 * margin) {
+              page.drawText(line, {
+                x: margin,
+                y,
+                size: fontSize,
+                font,
+              });
+              
+              line = word;
+              y -= lineHeight;
+              
+              if (y < margin) {
+                y = pdfDoc.addPage().getHeight() - margin;
+              }
+            } else {
+              line = testLine;
+            }
+          }
+          
+          if (line) {
+            page.drawText(line, {
               x: margin,
               y,
               size: fontSize,
               font,
-              lineHeight,
             });
-            
-            y -= lineHeight;
           }
           
           const pdfBytes = await pdfDoc.save();
@@ -176,33 +184,30 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
     
     switch (toolId) {
       case 'pdf-to-word': {
-        // Use pdf-lib to maintain formatting
-        const pdfBytes = await fs.readFile(file.path);
-        const pdfDoc = await PDFDocument.load(pdfBytes);
-        const pages = pdfDoc.getPages();
+        const pdfParser = new pdf2json.default();
+        const pdfData = await new Promise((resolve, reject) => {
+          pdfParser.loadPDF(file.path);
+          pdfParser.on('pdfParser_dataReady', (data) => resolve(data));
+          pdfParser.on('pdfParser_dataError', (err) => reject(err));
+        });
+        
+        let content = '';
+        for (const page of (pdfData as any).Pages) {
+          for (const text of page.Texts) {
+            content += decodeURIComponent(text.R[0].T) + ' ';
+          }
+          content += '\n\n';
+        }
         
         const doc = new Document({
-          sections: await Promise.all(pages.map(async (page) => {
-            const text = await page.extractText();
-            const { width, height } = page.getSize();
-            
-            return {
-              properties: {
-                page: {
-                  size: {
-                    width: width,
-                    height: height,
-                  },
-                },
-              },
-              children: text.split('\n').map(line => 
-                new Paragraph({
-                  children: [new TextRun(line)],
-                  spacing: { line: 360 },
-                })
-              ),
-            };
-          }))
+          sections: [{
+            properties: {},
+            children: [
+              new Paragraph({
+                children: [new TextRun(content)],
+              }),
+            ],
+          }],
         });
         
         const buffer = await Packer.toBuffer(doc);
@@ -211,48 +216,45 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
       }
       
       case 'pdf-to-excel': {
-        // Use pdf-lib to maintain table structure
-        const pdfBytes = await fs.readFile(file.path);
-        const pdfDoc = await PDFDocument.load(pdfBytes);
-        const pages = pdfDoc.getPages();
+        const pdfParser = new pdf2json.default();
+        const pdfData = await new Promise((resolve, reject) => {
+          pdfParser.loadPDF(file.path);
+          pdfParser.on('pdfParser_dataReady', (data) => resolve(data));
+          pdfParser.on('pdfParser_dataError', (err) => reject(err));
+        });
         
         const workbook = xlsx.utils.book_new();
-        const data: string[][] = [];
+        const worksheet = xlsx.utils.aoa_to_sheet([[]]);
         
-        for (const page of pages) {
-          const text = await page.extractText();
-          const rows = text.split('\n').map(row => row.split(/\s+/));
-          data.push(...rows);
+        let row = 0;
+        for (const page of (pdfData as any).Pages) {
+          for (const text of page.Texts) {
+            xlsx.utils.sheet_add_aoa(worksheet, [[decodeURIComponent(text.R[0].T)]], { origin: { r: row++, c: 0 } });
+          }
         }
         
-        const worksheet = xlsx.utils.aoa_to_sheet(data);
         xlsx.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
         xlsx.writeFile(workbook, outputPath + '.xlsx');
         break;
       }
       
       case 'pdf-to-powerpoint': {
-        // Fix pptxgenjs constructor issue
-        const pptx = require('pptxgenjs');
-        const pres = new pptx();
+        const pdfParser = new pdf2json.default();
+        const pdfData = await new Promise((resolve, reject) => {
+          pdfParser.loadPDF(file.path);
+          pdfParser.on('pdfParser_dataReady', (data) => resolve(data));
+          pdfParser.on('pdfParser_dataError', (err) => reject(err));
+        });
         
-        const pdfBytes = await fs.readFile(file.path);
-        const pdfDoc = await PDFDocument.load(pdfBytes);
-        const pages = pdfDoc.getPages();
+        const pres = new pptxgenjs();
         
-        for (const page of pages) {
-          const text = await page.extractText();
-          const { width, height } = page.getSize();
-          
+        for (const page of (pdfData as any).Pages) {
           const slide = pres.addSlide();
-          slide.addText(text, {
-            x: 0.5,
-            y: 0.5,
-            w: '90%',
-            h: '90%',
-            fontSize: 12,
-            breakLine: true
-          });
+          let content = '';
+          for (const text of page.Texts) {
+            content += decodeURIComponent(text.R[0].T) + ' ';
+          }
+          slide.addText(content, { x: 0.5, y: 0.5, w: '90%', h: '90%' });
         }
         
         await pres.writeFile({ fileName: outputPath + '.pptx' });
@@ -260,25 +262,19 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
       }
       
       case 'pdf-to-jpg': {
-        const pdfBytes = await fs.readFile(file.path);
-        const pdfDoc = await PDFDocument.load(pdfBytes);
-        const pages = pdfDoc.getPages();
+        const PDFNet = require('@pdftron/pdfnet-node');
+        await PDFNet.initialize();
         
-        // Use sharp for better image handling
-        for (let i = 0; i < pages.length; i++) {
-          const page = pages[i];
-          const { width, height } = page.getSize();
+        await PDFNet.runWithCleanup(async () => {
+          const doc = await PDFNet.PDFDoc.createFromFilePath(file.path);
+          const pageCount = await doc.getPageCount();
           
-          // Convert PDF page to PNG first for better quality
-          const pngBytes = await page.toPNG();
-          await sharp(Buffer.from(pngBytes))
-            .resize(Math.round(width), Math.round(height), {
-              fit: 'contain',
-              background: { r: 255, g: 255, b: 255, alpha: 1 }
-            })
-            .jpeg({ quality: 90 })
-            .toFile(`${outputPath}_${i + 1}.jpg`);
-        }
+          for (let i = 1; i <= pageCount; i++) {
+            const page = await doc.getPage(i);
+            const pdfDraw = await PDFNet.PDFDraw.create(92);
+            await pdfDraw.export(page, `${outputPath}_${i}.jpg`, 'JPEG');
+          }
+        });
         break;
       }
       
