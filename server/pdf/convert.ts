@@ -144,18 +144,53 @@ export async function convertFromPdf(file: File, toolId: string): Promise<File> 
     const outputFileName = `converted_${uuidv4()}`;
     const outputPath = path.join(process.cwd(), 'uploads', outputFileName);
     
-    // Basic text extraction
-    const pdfDoc = await PDFDocument.load(await fs.readFile(file.path));
-    let text = '';
-    
-    for (let i = 0; i < pdfDoc.getPageCount(); i++) {
-      const page = pdfDoc.getPage(i);
-      // Extract text (basic implementation)
-      text += `Page ${i + 1}\n\n`;
-    }
-    
     switch (toolId) {
+      case 'pdf-to-word': {
+        const pdf2json = require('pdf2json');
+        const docx = require('docx');
+        
+        // Convert PDF to text content
+        const pdfParser = new pdf2json();
+        const pdfData = await new Promise((resolve, reject) => {
+          pdfParser.loadPDF(file.path);
+          pdfParser.on('pdfParser_dataReady', (data) => resolve(data));
+          pdfParser.on('pdfParser_dataError', (err) => reject(err));
+        });
+        
+        // Extract text from PDF
+        let content = '';
+        for (const page of pdfData.Pages) {
+          for (const text of page.Texts) {
+            content += decodeURIComponent(text.R[0].T) + ' ';
+          }
+          content += '\n\n';
+        }
+        
+        // Create Word document
+        const doc = new docx.Document({
+          sections: [{
+            properties: {},
+            children: [
+              new docx.Paragraph({
+                children: [new docx.TextRun(content)],
+              }),
+            ],
+          }],
+        });
+        
+        // Save as DOCX
+        const buffer = await docx.Packer.toBuffer(doc);
+        await fs.writeFile(outputPath + '.docx', buffer);
+        break;
+      }
+      
       case 'pdf-to-text':
+        const pdfDoc = await PDFDocument.load(await fs.readFile(file.path));
+        let text = '';
+        for (let i = 0; i < pdfDoc.getPageCount(); i++) {
+          const page = pdfDoc.getPage(i);
+          text += `Page ${i + 1}\n\n`;
+        }
         await fs.writeFile(outputPath + '.txt', text);
         break;
         
