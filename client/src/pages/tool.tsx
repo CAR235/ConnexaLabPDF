@@ -85,11 +85,7 @@ export default function Tool() {
   };
 
   // Handle processing the files
-  const [rotationAngle, setRotationAngle] = useState(90);
-const [selectedPages, setSelectedPages] = useState<number[]>([]);
-const [signatureUrl, setSignatureUrl] = useState<string>('');
-
-const handleProcessFiles = async () => {
+  const handleProcessFiles = async () => {
     if (!tool) return;
     if (files.length === 0) {
       toast({
@@ -98,31 +94,6 @@ const handleProcessFiles = async () => {
         variant: "destructive",
       });
       return;
-    }
-
-    let options = {};
-    
-    if (tool.id === 'rotate-pdf') {
-      options = {
-        pages: selectedPages,
-        angle: rotationAngle
-      };
-    } else if (tool.id === 'extract-pages') {
-      options = {
-        pagesToExtract: selectedPages
-      };
-    } else if (tool.id === 'sign-pdf') {
-      if (!signatureUrl) {
-        toast({
-          title: "Firma mancante",
-          description: "Inserisci una firma prima di procedere.",
-          variant: "destructive",
-        });
-        return;
-      }
-      options = {
-        signatureUrl
-      };
     }
 
     setProcessing(true);
@@ -244,58 +215,6 @@ const handleProcessFiles = async () => {
               <>
                 <div className="mb-6">
                   <h2 className="font-semibold text-neutral-800 mb-2">Carica File</h2>
-                  {tool.id === 'rotate-pdf' && (
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Angolo di rotazione
-                      </label>
-                      <select 
-                        value={rotationAngle}
-                        onChange={(e) => setRotationAngle(Number(e.target.value))}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                      >
-                        <option value={90}>90° in senso orario</option>
-                        <option value={180}>180°</option>
-                        <option value={270}>90° in senso antiorario</option>
-                      </select>
-                    </div>
-                  )}
-                  
-                  {(tool.id === 'extract-pages' || tool.id === 'rotate-pdf') && (
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Seleziona pagine (es: 1,2,3)
-                      </label>
-                      <input
-                        type="text"
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                        placeholder="1,2,3"
-                        onChange={(e) => {
-                          const pages = e.target.value
-                            .split(',')
-                            .map(p => parseInt(p.trim()))
-                            .filter(p => !isNaN(p))
-                            .map(p => p - 1); // Convert to 0-based index
-                          setSelectedPages(pages);
-                        }}
-                      />
-                    </div>
-                  )}
-                  
-                  {tool.id === 'sign-pdf' && (
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        URL della firma (immagine)
-                      </label>
-                      <input
-                        type="text"
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                        placeholder="https://example.com/signature.png"
-                        onChange={(e) => setSignatureUrl(e.target.value)}
-                      />
-                    </div>
-                  )}
-                  
                   <FileDropzone
                     onFilesAdded={handleFilesAdded}
                     multiple={tool.id === 'merge-pdf'}

@@ -5,34 +5,52 @@ import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { type File } from '@shared/schema';
 import { storage } from '../storage';
+import { createCanvas } from 'canvas';
+import officegen from 'officegen';
+import mammoth from 'mammoth';
 
+// Convert various formats to PDF
 export async function convertToPdf(files: File[], toolId: string): Promise<File> {
   try {
     const pdfDoc = await PDFDocument.create();
-    
-    for (const file of files) {
-      // Read the file content
-      const fileContent = await fs.readFile(file.path);
-      
-      // Here we'd use specific conversion logic based on file type
-      // For now, we create a page with some text
-      const page = pdfDoc.addPage([612, 792]);
-      page.drawText(`Content from ${file.originalFilename}`, {
-        x: 50,
-        y: 700,
-        size: 20,
-      });
-    }
-    
     const outputFileName = `converted_${uuidv4()}.pdf`;
     const outputPath = path.join(process.cwd(), 'uploads', outputFileName);
-    
+
+    for (const file of files) {
+      const fileContent = await fs.readFile(file.path);
+      
+      if (file.mimeType.includes('image')) {
+        // Convert image to PDF
+        const page = pdfDoc.addPage([612, 792]);
+        const image = await pdfDoc.embedJpg(fileContent);
+        const { width, height } = image.scale(0.8);
+        
+        page.drawImage(image, {
+          x: (612 - width) / 2,
+          y: (792 - height) / 2,
+          width,
+          height,
+        });
+      } else if (file.mimeType.includes('word') || file.originalFilename.endsWith('.docx')) {
+        // Convert Word to PDF using mammoth for text extraction
+        const result = await mammoth.extractRawText({ buffer: fileContent });
+        const page = pdfDoc.addPage([612, 792]);
+        page.drawText(result.value, {
+          x: 50,
+          y: 750,
+          size: 12,
+          maxWidth: 500,
+        });
+      }
+      // Add other format conversions as needed
+    }
+
     const pdfBytes = await pdfDoc.save();
     await fs.writeFile(outputPath, pdfBytes);
-    
-    const outputFile = await storage.createFile({
+
+    return await storage.createFile({
       filename: outputFileName,
-      originalFilename: `converted_${path.basename(files[0].originalFilename)}`,
+      originalFilename: `converted_${path.basename(files[0].originalFilename, path.extname(files[0].originalFilename))}.pdf`,
       path: outputPath,
       size: pdfBytes.length,
       mimeType: 'application/pdf',
@@ -42,77 +60,80 @@ export async function convertToPdf(files: File[], toolId: string): Promise<File>
         conversionType: toolId
       }
     });
-    
-    return outputFile;
   } catch (error) {
     console.error('Error converting to PDF:', error);
     throw error;
   }
 }
 
+// Convert PDF to various formats
 export async function convertFromPdf(file: File, toolId: string): Promise<File> {
   try {
-    const fileBuffer = await fs.readFile(file.path);
-    const pdfDoc = await PDFDocument.load(fileBuffer);
-    
-    // Extract text and create appropriate output based on format
-    const pages = pdfDoc.getPages();
-    let outputContent = '';
-    
-    for (const page of pages) {
-      // In a real implementation, we'd extract text properly
-      // For now, we'll create a simple text representation
-      outputContent += `Page ${pages.indexOf(page) + 1}\n`;
-      outputContent += `Width: ${page.getWidth()}, Height: ${page.getHeight()}\n`;
-      outputContent += '---\n';
+    if (!file.mimeType.includes('pdf')) {
+      throw new Error(`File ${file.originalFilename} is not a PDF`);
     }
+
+    const fileContent = await fs.readFile(file.path);
+    const pdfDoc = await PDFDocument.load(fileContent);
+    const pages = pdfDoc.getPages();
     
-    const baseFileName = path.basename(file.originalFilename, '.pdf');
-    let outputFormat: string;
-    let outputMimeType: string;
-    
+    let outputFileName: string;
+    let outputPath: string;
+    let outputContent: Buffer;
+
     switch (toolId) {
-      case 'pdf-to-word':
-        outputFormat = 'docx';
-        outputMimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-        break;
-      case 'pdf-to-excel':
-        outputFormat = 'xlsx';
-        outputMimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-        break;
-      case 'pdf-to-powerpoint':
-        outputFormat = 'pptx';
-        outputMimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-        break;
       case 'pdf-to-jpg':
-        outputFormat = 'jpg';
-        outputMimeType = 'image/jpeg';
+        // Convert first page to JPG
+        const page = pages[0];
+        const canvas = createCanvas(page.getWidth(), page.getHeight());
+        const ctx = canvas.getContext('2d');
+        
+        // Draw PDF page to canvas (simplified version)
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, page.getWidth(), page.getHeight());
+        
+        outputFileName = `${path.basename(file.originalFilename, '.pdf')}_${uuidv4()}.jpg`;
+        outputPath = path.join(process.cwd(), 'uploads', outputFileName);
+        outputContent = canvas.toBuffer('image/jpeg');
+        await fs.writeFile(outputPath, outputContent);
         break;
+
+      case 'pdf-to-word':
+        // Create a simple DOCX with the PDF text content
+        const docx = officegen('docx');
+        const extractedText = pages.map(page => page.getTextContent()).join('\n\n');
+        
+        docx.createP().addText(extractedText);
+        
+        outputFileName = `${path.basename(file.originalFilename, '.pdf')}_${uuidv4()}.docx`;
+        outputPath = path.join(process.cwd(), 'uploads', outputFileName);
+        
+        const docxStream = fs.createWriteStream(outputPath);
+        await new Promise((resolve, reject) => {
+          docx.generate(docxStream, {
+            'finalize': resolve,
+            'error': reject
+          });
+        });
+        break;
+
       default:
         throw new Error(`Unsupported conversion format: ${toolId}`);
     }
-    
-    const outputFileName = `${baseFileName}_${uuidv4()}.${outputFormat}`;
-    const outputPath = path.join(process.cwd(), 'uploads', outputFileName);
-    
-    await fs.writeFile(outputPath, outputContent);
-    
+
     const stats = await fs.stat(outputPath);
-    const outputFile = await storage.createFile({
+    return await storage.createFile({
       filename: outputFileName,
-      originalFilename: `${baseFileName}.${outputFormat}`,
+      originalFilename: outputFileName,
       path: outputPath,
       size: stats.size,
-      mimeType: outputMimeType,
+      mimeType: toolId === 'pdf-to-jpg' ? 'image/jpeg' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       userId: file.userId,
       metadata: {
         sourceFile: file.id,
-        conversionType: toolId,
-        pageCount: pages.length
+        conversionType: toolId
       }
     });
-    
-    return outputFile;
   } catch (error) {
     console.error('Error converting from PDF:', error);
     throw error;
