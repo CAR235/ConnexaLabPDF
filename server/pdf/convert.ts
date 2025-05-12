@@ -1,53 +1,47 @@
 
-import PDFNet from '@pdftron/pdfnet-node';
+import { PDFDocument } from 'pdf-lib';
 import fs from 'fs/promises';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { type File } from '@shared/schema';
 import { storage } from '../storage';
-
-// Initialize PDFNet
-PDFNet.initialize();
+import { createCanvas } from 'canvas';
+import officegen from 'officegen';
+import mammoth from 'mammoth';
 
 // Convert various formats to PDF
 export async function convertToPdf(files: File[], toolId: string): Promise<File> {
   try {
+    const pdfDoc = await PDFDocument.create();
     const outputFileName = `converted_${uuidv4()}.pdf`;
     const outputPath = path.join(process.cwd(), 'uploads', outputFileName);
 
-    await PDFNet.runWithCleanup(async () => {
-      const doc = await PDFNet.PDFDoc.create();
-
-      for (const file of files) {
-        const fileContent = await fs.readFile(file.path);
+    for (const file of files) {
+      const fileContent = await fs.readFile(file.path);
+      
+      if (file.mimeType.includes('image')) {
+        // Convert image to PDF
+        const page = pdfDoc.addPage([612, 792]);
+        const image = await pdfDoc.embedJpg(fileContent);
+        const { width, height } = image.scale(0.8);
         
-        if (file.mimeType.includes('image')) {
-          // Convert image to PDF
-          const image = await PDFNet.Image.createFromMemory(doc, fileContent);
-          const page = await doc.pageCreate();
-          page.setMediaBox(0, 0, 612, 792);
-          const builder = await PDFNet.ElementBuilder.create();
-          const writer = await PDFNet.ElementWriter.create();
-          writer.beginOnPage(page);
-          const element = await builder.createImageFromMatrix(image, await PDFNet.Matrix2D.create(500, 0, 0, 500, 50, 50));
-          writer.writePlacedElement(element);
-          writer.end();
-          doc.pagePushBack(page);
-        } else if (file.mimeType.includes('word') || file.originalFilename.endsWith('.docx')) {
-          // Convert Word to PDF using PDFTron
-          const conv = await PDFNet.Convert.universalConversion(file.path, {
-            pdftron_convert_options: {
-              page_width: 612,
-              page_height: 792,
-            }
-          });
-          const wordDoc = await PDFNet.PDFDoc.createFromBuffer(conv);
-          await doc.insertPages(doc.getPageCount(), wordDoc, 1, wordDoc.getPageCount(), PDFNet.PDFDoc.InsertFlag.e_none);
-        }
+        page.drawImage(image, {
+          x: (612 - width) / 2,
+          y: (792 - height) / 2,
+          width,
+          height,
+        });
+      } else if (file.mimeType.includes('word') || file.originalFilename.endsWith('.docx')) {
+        // Convert Word to PDF using mammoth for text extraction
+        const result = await mammoth.extractRawText({ buffer: fileContent });
+        const page = pdfDoc.addPage([612, 792]);
+        page.drawText(result.value, {
+          x: 50,
+          y: 750,
+          size: 12,
+          maxWidth: 500,
+        });
       }
-
-      await doc.save(outputPath, PDFNet.SDFDoc.SaveOptions.e_linearized);
-    });
       // Add other format conversions as needed
     }
 
